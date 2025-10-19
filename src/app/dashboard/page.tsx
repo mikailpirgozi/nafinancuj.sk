@@ -300,10 +300,12 @@ export default function MainDashboard() {
               </nav>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" className="border-slate-200 hover:border-blue-300 hover:bg-blue-50">
-                <Settings className="h-4 w-4 mr-2" />
-                Nastavenia
-              </Button>
+              <Link href="/dashboard/settings">
+                <Button variant="outline" size="sm" className="border-slate-200 hover:border-blue-300 hover:bg-blue-50">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Nastavenia
+                </Button>
+              </Link>
               <UserButton afterSignOutUrl="/" />
             </div>
           </div>
@@ -575,10 +577,12 @@ export default function MainDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-500/30">
-              <FileText className="mr-2 h-4 w-4" />
-              Zobraziť omeškané splátky
-            </Button>
+            <Link href="/dashboard/overdue">
+              <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-500/30">
+                <FileText className="mr-2 h-4 w-4" />
+                Zobraziť omeškané splátky
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       )}
