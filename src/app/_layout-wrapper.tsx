@@ -9,8 +9,7 @@ export function LayoutWrapper({ children }: { children: ReactNode }) {
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      signInFallbackRedirectUrl="/dashboard"
-      signUpFallbackRedirectUrl="/dashboard"
+      forceRedirectUrl="/dashboard"
       afterSignOutUrl="/"
     >
       <Providers>
