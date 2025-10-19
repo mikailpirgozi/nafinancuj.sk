@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { loans, installments } from "@/db/schema";
+import { loans, installments, payments } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
@@ -42,6 +42,22 @@ export async function GET(
       .where(eq(installments.loanId, id))
       .orderBy(installments.dueDate);
 
+    // Get payments for each installment
+    const installmentsWithPayments = await Promise.all(
+      loanInstallments.map(async (installment) => {
+        const installmentPayments = await db
+          .select()
+          .from(payments)
+          .where(eq(payments.installmentId, installment.id))
+          .orderBy(payments.paidAt);
+
+        return {
+          ...installment,
+          payments: installmentPayments,
+        };
+      })
+    );
+
     // Calculate summary
     const totalAmount = loanInstallments.reduce(
       (sum, inst) => sum + inst.totalAmount,
@@ -60,7 +76,7 @@ export async function GET(
       success: true,
       data: {
         loan,
-        installments: loanInstallments,
+        installments: installmentsWithPayments,
         summary: {
           totalAmount,
           paidAmount,

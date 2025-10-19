@@ -13,6 +13,8 @@ import { installments } from "./installments";
 export const paymentMethodEnum = pgEnum("payment_method", [
   "CASH",
   "BANK_TRANSFER",
+  "CARD",
+  "OTHER",
 ]);
 
 export const payments = pgTable("payments", {

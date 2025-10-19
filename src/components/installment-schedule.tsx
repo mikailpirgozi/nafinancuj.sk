@@ -34,6 +34,14 @@ import {
 import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
+interface Payment {
+  id: string;
+  amount: number;
+  paymentMethod: string;
+  paidAt: string;
+  notes: string | null;
+}
+
 interface Installment {
   id: string;
   dueDate: string;
@@ -43,6 +51,7 @@ interface Installment {
   paidAmount: number;
   status: string;
   paidAt: string | null;
+  payments?: Payment[];
 }
 
 interface InstallmentScheduleProps {
@@ -117,9 +126,9 @@ export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: In
         loanId,
         installmentId: selectedInstallment.id,
         amount: Math.round(parseFloat(paymentData.amount) * 100),
-        method: paymentData.method,
+        paymentMethod: paymentData.method,
         paidAt: paymentData.date,
-        notes: paymentData.notes || null,
+        notes: paymentData.notes || undefined,
       };
 
       const response = await fetch("/api/payments", {
@@ -218,9 +227,51 @@ export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: In
                         </span>
                       </div>
                       {installment.paidAt && (
-                        <p className="text-xs text-emerald-600 mt-1">
-                          Zaplatené: {new Date(installment.paidAt).toLocaleDateString("sk-SK")}
-                        </p>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs text-emerald-600 font-semibold">
+                            Zaplatené: {new Date(installment.paidAt).toLocaleDateString("sk-SK")}
+                          </p>
+                          {(() => {
+                            const dueDate = new Date(installment.dueDate);
+                            const paidDate = new Date(installment.paidAt);
+                            const daysLate = Math.floor((paidDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                            if (daysLate > 0) {
+                              return (
+                                <p className="text-xs text-red-600">
+                                  Omeškanie: {daysLate} {daysLate === 1 ? 'deň' : daysLate < 5 ? 'dni' : 'dní'}
+                                </p>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      )}
+                      {installment.payments && installment.payments.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {installment.payments.map((payment) => (
+                            <div key={payment.id} className="text-xs bg-blue-50 p-2 rounded border border-blue-100">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-blue-900">
+                                  €{(payment.amount / 100).toLocaleString()}
+                                </span>
+                                <span className="text-blue-700">
+                                  {payment.paymentMethod === 'BANK_TRANSFER' && 'Prevod'}
+                                  {payment.paymentMethod === 'CASH' && 'Hotovosť'}
+                                  {payment.paymentMethod === 'CARD' && 'Karta'}
+                                  {payment.paymentMethod === 'OTHER' && 'Iné'}
+                                </span>
+                              </div>
+                              <div className="text-blue-600 mt-1">
+                                {new Date(payment.paidAt).toLocaleDateString("sk-SK")}
+                              </div>
+                              {payment.notes && (
+                                <div className="text-slate-600 mt-1 italic">
+                                  {payment.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-medium">

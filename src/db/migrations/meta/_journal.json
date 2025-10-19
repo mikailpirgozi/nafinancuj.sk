@@ -8,6 +8,13 @@
       "when": 1760898516881,
       "tag": "0000_real_mystique",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760909129327,
+      "tag": "0001_dusty_goliath",
+      "breakpoints": true
     }
   ]
 }

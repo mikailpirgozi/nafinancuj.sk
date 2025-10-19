@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const paymentMethodSchema = z.enum(["CASH", "BANK_TRANSFER"]);
+export const paymentMethodSchema = z.enum(["CASH", "BANK_TRANSFER", "CARD", "OTHER"]);
 
 export const createPaymentSchema = z.object({
   loanId: z.string().uuid("Neplatné ID úveru"),
