@@ -1,183 +1,118 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { contractTemplates } from "@/db/schema";
-import { updateContractTemplateSchema } from "@/lib/validators/contract-template";
 import { eq, and } from "drizzle-orm";
+import { contractTemplateUpdateSchema } from "@/lib/validators/contract-template";
+import { NextRequest, NextResponse } from "next/server";
 
-/**
- * GET /api/contracts/templates/[id]
- * Get a specific contract template
- */
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+async function verifyOwnership(templateId: string, userId: string) {
+  const user = await db
+    .select()
+    .from("users")
+    .where(eq("users.clerkId", userId))
+    .limit(1)
+    .execute();
+
+  if (!user || user.length === 0) {
+    return null;
+  }
+
+  const organizationId = (user[0] as any).organizationId;
+
+  const template = await db
+    .select()
+    .from(contractTemplates)
+    .where(and(eq(contractTemplates.id, templateId), eq(contractTemplates.organizationId, organizationId)))
+    .limit(1)
+    .execute();
+
+  return template.length > 0 ? template[0] : null;
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
-
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
-
-    if (!user?.organizationId) {
-      return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
-      );
-    }
-
-    const template = await db.query.contractTemplates.findFirst({
-      where: and(
-        eq(contractTemplates.id, id),
-        eq(contractTemplates.organizationId, user.organizationId)
-      ),
-    });
-
+    const template = await verifyOwnership(params.id, userId);
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ template });
+    return NextResponse.json({
+      success: true,
+      data: template,
+    });
   } catch (error) {
-    console.error("Error fetching contract template:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Error fetching template:", error);
+    return NextResponse.json({ error: "Failed to fetch template" }, { status: 500 });
   }
 }
 
-/**
- * PATCH /api/contracts/templates/[id]
- * Update a contract template
- */
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
-
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
-
-    if (!user?.organizationId) {
-      return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
-      );
-    }
-
-    // Only ADMIN, OWNER, SUPER_ADMIN can update templates
-    if (!["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
-      return NextResponse.json(
-        { error: "Insufficient permissions" },
-        { status: 403 }
-      );
+    const template = await verifyOwnership(params.id, userId);
+    if (!template) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
     const body = await req.json();
-    const validatedData = updateContractTemplateSchema.parse(body);
+    const validation = contractTemplateUpdateSchema.safeParse(body);
 
-    const [template] = await db
-      .update(contractTemplates)
-      .set({ ...validatedData, updatedAt: new Date() })
-      .where(
-        and(
-          eq(contractTemplates.id, id),
-          eq(contractTemplates.organizationId, user.organizationId)
-        )
-      )
-      .returning();
-
-    if (!template) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ template });
-  } catch (error) {
-    console.error("Error updating contract template:", error);
-    if (error instanceof Error && error.name === "ZodError") {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Invalid input data", details: error },
+        { error: "Validation failed", details: validation.error.errors },
         { status: 400 }
       );
     }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+
+    const result = await db
+      .update(contractTemplates)
+      .set({
+        ...validation.data,
+        updatedAt: new Date(),
+      })
+      .where(eq(contractTemplates.id, params.id))
+      .returning();
+
+    return NextResponse.json({
+      success: true,
+      data: result[0],
+    });
+  } catch (error) {
+    console.error("Error updating template:", error);
+    return NextResponse.json({ error: "Failed to update template" }, { status: 500 });
   }
 }
 
-/**
- * DELETE /api/contracts/templates/[id]
- * Delete a contract template
- */
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
-
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
-
-    if (!user?.organizationId) {
-      return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
-      );
-    }
-
-    // Only ADMIN, OWNER, SUPER_ADMIN can delete templates
-    if (!["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
-      return NextResponse.json(
-        { error: "Insufficient permissions" },
-        { status: 403 }
-      );
-    }
-
-    const [template] = await db
-      .delete(contractTemplates)
-      .where(
-        and(
-          eq(contractTemplates.id, id),
-          eq(contractTemplates.organizationId, user.organizationId)
-        )
-      )
-      .returning();
-
+    const template = await verifyOwnership(params.id, userId);
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
+    await db.delete(contractTemplates).where(eq(contractTemplates.id, params.id));
+
+    return NextResponse.json({
+      success: true,
+      message: "Template deleted successfully",
+    });
   } catch (error) {
-    console.error("Error deleting contract template:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Error deleting template:", error);
+    return NextResponse.json({ error: "Failed to delete template" }, { status: 500 });
   }
 }
 

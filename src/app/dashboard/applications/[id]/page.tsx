@@ -1,42 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Settings,
-  Users,
-  FileBarChart,
   AlertCircle,
-  RefreshCw,
   ArrowLeft,
-  FileText,
-  TrendingUp,
-  Sparkles,
   CheckCircle,
-  DollarSign,
-  Calendar,
-  User,
-  ArrowRight,
+  FileText,
+  Plus,
+  RefreshCw,
+  Send,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { sk } from "date-fns/locale";
 
-interface ApplicationData {
+interface Application {
   id: string;
   clientId: string;
-  amount: number;
+  loanAmount: number;
   purpose: string;
   status: string;
   durationMonths: number;
-  assignedToUserId: string | null;
   createdAt: string;
   updatedAt: string;
   client?: {
@@ -48,585 +38,387 @@ interface ApplicationData {
   };
 }
 
-const STATUS_LABELS = {
-  NEW: "Nová",
-  REVIEWING: "V kontrole",
-  DOCUMENTS_REQUESTED: "Dokumenty požadované",
-  PENDING_APPROVAL: "Čaká na schválenie",
-  APPROVED: "Schválená",
-  REJECTED: "Zamietnutá",
-};
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+const WORKFLOW_STEPS = [
+  { id: "NEW", label: "Nová", color: "bg-slate-500" },
+  { id: "REVIEWING", label: "V kontrole", color: "bg-blue-500" },
+  { id: "DOCUMENTS_REQUESTED", label: "Dokumenty", color: "bg-amber-500" },
+  { id: "PENDING_APPROVAL", label: "Na schválenie", color: "bg-purple-500" },
+  { id: "APPROVED", label: "Schválená", color: "bg-emerald-500" },
+];
+
+const REQUIRED_DOCUMENTS = [
+  { id: "register_extract", label: "Výpis z registra", completed: false },
+  { id: "income_cert", label: "Potvrdenie o príjmoch", completed: false },
+  { id: "balance_sheet", label: "Súvaha a výkaz ziskov", completed: false },
+];
 
 export default function ApplicationDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const applicationId = params.id as string;
 
-  const [data, setData] = useState<ApplicationData | null>(null);
+  const [application, setApplication] = useState<Application | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [isConvertOpen, setIsConvertOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [users, setUsers] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [convertFormData, setConvertFormData] = useState({
-    interestRateAnnual: "12.5",
-    productType: "AMORTIZING" as "AMORTIZING" | "INTEREST_ONLY",
-    startDate: new Date().toISOString().split("T")[0],
-  });
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isCreatingLoan, setIsCreatingLoan] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     fetchApplicationData();
-    fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationId]);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch("/api/users");
-      const result = await response.json();
-      if (result.success) {
-        setUsers(result.data);
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  };
 
   const fetchApplicationData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/applications/${applicationId}`);
-      const result = await response.json();
       
-      if (!response.ok) {
-        throw new Error(result.error || "Chyba pri načítaní žiadosti");
-      }
+      const [appRes, commentsRes] = await Promise.all([
+        fetch(`/api/applications/${applicationId}`),
+        fetch(`/api/applications/${applicationId}/comments`),
+      ]);
 
-      setData(result.data);
+      if (!appRes.ok) throw new Error("Chyba pri načítaní žiadosti");
+
+      const appData = await appRes.json();
+      setApplication(appData.data);
+
+      if (commentsRes.ok) {
+        const commentsData = await commentsRes.json();
+        setComments(commentsData.data || []);
+      }
     } catch (error) {
-      console.error("Error fetching application:", error);
-      toast.error(error instanceof Error ? error.message : "Chyba pri načítaní žiadosti");
+      console.error("Error:", error);
+      toast.error("Chyba pri načítaní dát");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      const response = await fetch(`/api/applications/${applicationId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Chyba pri zmene statusu");
-      }
-
-      toast.success("Status úspešne zmenený");
-      await fetchApplicationData();
-    } catch (error) {
-      console.error("Error updating status:", error);
-      toast.error("Chyba pri zmene statusu");
-    }
-  };
-
-  const handleAssignAgent = async () => {
-    if (!selectedUserId) {
-      toast.error("Vyberte agenta");
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      toast.error("Komentár nemôže byť prázdny");
       return;
     }
 
     try {
-      const response = await fetch(`/api/applications/${applicationId}/assign`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUserId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Chyba pri priraďovaní agenta");
-      }
-
-      toast.success("Agent úspešne priradený");
-      setIsAssignDialogOpen(false);
-      await fetchApplicationData();
-    } catch (error) {
-      console.error("Error assigning agent:", error);
-      toast.error("Chyba pri priraďovaní agenta");
-    }
-  };
-
-  const handleConvertToLoan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!data) return;
-
-    setIsSubmitting(true);
-
-    try {
-      const payload = {
-        clientId: data.clientId,
-        amount: data.amount,
-        interestRateAnnual: convertFormData.interestRateAnnual,
-        interestRateMonthly: (parseFloat(convertFormData.interestRateAnnual) / 12).toFixed(2),
-        productType: convertFormData.productType,
-        durationMonths: data.durationMonths,
-        startDate: convertFormData.startDate,
-      };
-
-      const response = await fetch("/api/loans", {
+      setIsSubmittingComment(true);
+      const response = await fetch(`/api/applications/${applicationId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ content: newComment }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Chyba pri vytváraní úveru");
-      }
+      if (!response.ok) throw new Error("Chyba pri pridaní komentára");
 
-      const result = await response.json();
-      toast.success("Úver úspešne vytvorený!");
-      
-      // Update application status to APPROVED
-      await handleStatusChange("APPROVED");
-      
-      // Redirect to loan detail
-      router.push(`/dashboard/loans/${result.data.id}`);
+      toast.success("Komentár pridaný");
+      setNewComment("");
+      await fetchApplicationData();
     } catch (error) {
-      console.error("Error converting to loan:", error);
-      toast.error(error instanceof Error ? error.message : "Chyba pri vytváraní úveru");
+      console.error("Error:", error);
+      toast.error("Chyba pri pridaní komentára");
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingComment(false);
     }
   };
 
-  if (!mounted) {
-    return null;
-  }
+  const handleCreateLoan = async () => {
+    try {
+      setIsCreatingLoan(true);
+      const response = await fetch(`/api/applications/${applicationId}/create-loan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: application?.loanAmount,
+          durationMonths: application?.durationMonths,
+          purpose: application?.purpose,
+        }),
+      });
 
-  if (loading) {
+      if (!response.ok) throw new Error("Chyba pri vytvorení úveru");
+
+      const data = await response.json();
+      toast.success("Úver vytvorený");
+      window.location.href = `/dashboard/loans/${data.data.id}`;
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Chyba pri vytvorení úveru");
+    } finally {
+      setIsCreatingLoan(false);
+    }
+  };
+
+  if (!mounted || !application) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="text-center">
           <RefreshCw className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">Načítavam detail žiadosti...</p>
+          <p className="text-slate-600 font-medium">Načítavam žiadosť...</p>
         </div>
       </div>
     );
   }
 
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">Žiadosť sa nenašla</p>
-          <Button onClick={() => router.push("/dashboard/applications")} className="mt-4">
-            Späť na zoznam žiadostí
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const clientName = data.client?.companyName || data.client?.contactPerson || "Neznámy klient";
+  const clientName = application.client?.companyName || application.client?.contactPerson || "Neznámy klient";
+  const currentStepIndex = WORKFLOW_STEPS.findIndex((step) => step.id === application.status);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Premium Top Navigation */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
-                  Nafinancuj.sk
-                </h1>
-              </div>
-              <nav className="hidden md:flex items-center gap-2">
-                <Link href="/dashboard" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
-                  Dashboard
-                </Link>
-                <Link href="/dashboard/clients" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
-                  <Users className="inline h-4 w-4 mr-2" />
-                  Klienti
-                </Link>
-                <Link href="/dashboard/loans" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
-                  <FileBarChart className="inline h-4 w-4 mr-2" />
-                  Úvery
-                </Link>
-                <Link href="/dashboard/applications" className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:scale-105">
-                  <FileText className="inline h-4 w-4 mr-2" />
-                  Žiadosti
-                </Link>
-                <a href="/dashboard/reports" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
-                  <TrendingUp className="inline h-4 w-4 mr-2" />
-                  Reporty
-                </a>
-                <a href="/dashboard/reminders" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
-                  <AlertCircle className="inline h-4 w-4 mr-2" />
-                  Upomienky
-                </a>
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" className="border-slate-200 hover:border-blue-300 hover:bg-blue-50">
-                <Settings className="h-4 w-4 mr-2" />
-                Nastavenia
+      <div className="container mx-auto py-8 px-6 max-w-7xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/applications">
+              <Button variant="outline" size="sm" className="border-slate-200 hover:border-blue-300">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Späť
               </Button>
-              <UserButton afterSignOutUrl="/" />
+            </Link>
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900 mb-1">Žiadosť #{applicationId.slice(0, 8).toUpperCase()}</h1>
+              <p className="text-slate-600">{clientName}</p>
             </div>
           </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto py-8 px-6 max-w-7xl">
-        {/* Back Button */}
-        <Button
-          variant="outline"
-          onClick={() => router.push("/dashboard/applications")}
-          className="mb-6 border-slate-200 hover:border-blue-300 hover:bg-blue-50"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Späť na zoznam žiadostí
-        </Button>
-
-        {/* Hero Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-4 mb-2">
-                <h2 className="text-4xl font-bold text-slate-900">Žiadosť o úver</h2>
-                <Badge className="text-lg px-4 py-1">
-                  {STATUS_LABELS[data.status as keyof typeof STATUS_LABELS]}
-                </Badge>
-              </div>
-              <p className="text-slate-600 text-lg">Detail žiadosti a správa dokumentov</p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={fetchApplicationData}
-                variant="outline"
-                className="border-slate-200 hover:border-blue-300 hover:bg-blue-50"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Obnoviť
+          <div className="flex gap-3">
+            <Button onClick={fetchApplicationData} variant="outline" disabled={loading} className="border-slate-200 hover:border-blue-300 hover:bg-blue-50">
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Obnoviť
+            </Button>
+            {application.status === "APPROVED" && (
+              <Button onClick={handleCreateLoan} disabled={isCreatingLoan} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30">
+                <Plus className="mr-2 h-4 w-4" />
+                Vytvoriť úver
               </Button>
-              {data.status === "APPROVED" && (
-                <Button
-                  onClick={() => setIsConvertOpen(true)}
-                  className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/30"
-                >
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                  Konvertovať na úver
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
         {/* Application Info Card */}
-        <Card className="mb-8 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              Informácie o žiadosti
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="border-0 shadow-xl mb-8">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
-                <p className="text-sm text-slate-500 mb-1">Klient</p>
-                <button
-                  onClick={() => router.push(`/dashboard/clients/${data.clientId}`)}
-                  className="text-blue-600 hover:underline font-semibold text-lg"
-                >
+                <p className="text-sm text-slate-500 mb-2">Klient</p>
+                <Link href={`/dashboard/clients/${application.clientId}`} className="text-lg font-semibold text-blue-600 hover:underline">
                   {clientName}
-                </button>
-                {data.client?.email && (
-                  <p className="text-sm text-slate-600 mt-1">{data.client.email}</p>
-                )}
-                {data.client?.phone && (
-                  <p className="text-sm text-slate-600">{data.client.phone}</p>
-                )}
+                </Link>
               </div>
-
               <div>
-                <p className="text-sm text-slate-500 mb-1">Požadovaná suma</p>
-                <p className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                  <DollarSign className="h-6 w-6" />
-                  €{(data.amount / 100).toLocaleString()}
-                </p>
+                <p className="text-sm text-slate-500 mb-2">Suma žiadosti</p>
+                <p className="text-3xl font-bold text-slate-900">€{(application.loanAmount / 100).toLocaleString()}</p>
               </div>
-
               <div>
-                <p className="text-sm text-slate-500 mb-1">Doba trvania</p>
-                <p className="text-xl font-semibold text-slate-900">{data.durationMonths} mesiacov</p>
-              </div>
-
-              <div className="col-span-full">
-                <p className="text-sm text-slate-500 mb-1">Účel úveru</p>
-                <p className="text-lg text-slate-900">{data.purpose}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Vytvorené</p>
-                <p className="flex items-center gap-2 text-slate-900">
-                  <Calendar className="h-4 w-4" />
-                  {new Date(data.createdAt).toLocaleDateString("sk-SK")}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Aktualizované</p>
-                <p className="flex items-center gap-2 text-slate-900">
-                  <Calendar className="h-4 w-4" />
-                  {new Date(data.updatedAt).toLocaleDateString("sk-SK")}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Pridelený agent</p>
-                <div className="flex items-center gap-3">
-                  <p className="flex items-center gap-2 text-slate-900">
-                    <User className="h-4 w-4" />
-                    {data.assignedToUserId || "Nepriradené"}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsAssignDialogOpen(true)}
-                    className="border-blue-300 hover:bg-blue-50"
-                  >
-                    {data.assignedToUserId ? "Zmeniť" : "Priradiť"}
-                  </Button>
-                </div>
+                <p className="text-sm text-slate-500 mb-2">Trvanie</p>
+                <p className="text-2xl font-bold text-slate-900">{application.durationMonths} mesiacov</p>
               </div>
             </div>
+            {application.purpose && (
+              <div className="mt-6 pt-6 border-t border-slate-200/60">
+                <p className="text-sm text-slate-500 mb-2">Účel žiadosti</p>
+                <p className="text-slate-700">{application.purpose}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Status Management Card */}
-        <Card className="mb-8 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Správa statusu</CardTitle>
-            <CardDescription>Zmeňte status žiadosti</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Label htmlFor="status">Nový status:</Label>
-              <Select value={data.status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[300px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NEW">Nová</SelectItem>
-                  <SelectItem value="REVIEWING">V kontrole</SelectItem>
-                  <SelectItem value="DOCUMENTS_REQUESTED">Dokumenty požadované</SelectItem>
-                  <SelectItem value="PENDING_APPROVAL">Čaká na schválenie</SelectItem>
-                  <SelectItem value="APPROVED">Schválená</SelectItem>
-                  <SelectItem value="REJECTED">Zamietnutá</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Info Box */}
-        {data.status === "APPROVED" && (
-          <Card className="border-0 shadow-xl bg-gradient-to-r from-emerald-50 to-emerald-100 border-l-4 border-l-emerald-600">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <CheckCircle className="h-6 w-6 text-emerald-600 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-emerald-900 mb-2">Žiadosť schválená</h3>
-                  <p className="text-emerald-800 mb-4">
-                    Táto žiadosť bola schválená a môže byť konvertovaná na úver. Kliknite na tlačidlo &quot;Konvertovať na úver&quot; pre vytvorenie úveru.
-                  </p>
-                  <Button
-                    onClick={() => setIsConvertOpen(true)}
-                    className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
-                  >
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Konvertovať na úver
-                  </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Workflow */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle>Workflow aplikácie</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  {WORKFLOW_STEPS.map((step, index) => (
+                    <div key={step.id} className="flex items-center flex-1">
+                      <div className="flex flex-col items-center flex-1">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold transition-all ${
+                          index <= currentStepIndex ? step.color : "bg-slate-300"
+                        } ${index === currentStepIndex ? "ring-4 ring-blue-200 scale-110" : ""}`}>
+                          {index < currentStepIndex ? (
+                            <CheckCircle className="h-6 w-6" />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                        <p className={`text-xs mt-2 text-center font-medium ${index <= currentStepIndex ? "text-slate-900" : "text-slate-500"}`}>
+                          {step.label}
+                        </p>
+                      </div>
+                      {index < WORKFLOW_STEPS.length - 1 && (
+                        <ChevronRight className={`h-5 w-5 mx-2 ${index < currentStepIndex ? "text-emerald-500" : "text-slate-300"}`} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              </CardContent>
+            </Card>
 
-      {/* Assign Agent Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Priradiť agenta</DialogTitle>
-            <DialogDescription>
-              Vyberte agenta, ktorý bude spracovávať túto žiadosť
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="agent">Agent</Label>
-            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Vyberte agenta" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.firstName} {user.lastName}
-                  </SelectItem>
+            {/* Required Documents */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Požadované dokumenty
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-3">
+                {REQUIRED_DOCUMENTS.map((doc) => (
+                  <div key={doc.id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      doc.completed ? "bg-emerald-500 border-emerald-500" : "border-slate-300"
+                    }`}>
+                      {doc.completed && <CheckCircle className="h-4 w-4 text-white" />}
+                    </div>
+                    <span className="text-slate-700 font-medium flex-1">{doc.label}</span>
+                    <Badge variant={doc.completed ? "default" : "outline"} className={doc.completed ? "bg-emerald-100 text-emerald-800" : ""}>
+                      {doc.completed ? "Nahraný" : "Chýba"}
+                    </Badge>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsAssignDialogOpen(false)}
-            >
-              Zrušiť
-            </Button>
-            <Button
-              type="button"
-              onClick={handleAssignAgent}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-            >
-              Priradiť
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 mt-3">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nahrať dokument
+                </Button>
+              </CardContent>
+            </Card>
 
-      {/* Convert to Loan Dialog */}
-      <Dialog open={isConvertOpen} onOpenChange={setIsConvertOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Konvertovať na úver</DialogTitle>
-            <DialogDescription>
-              Vytvorte úver zo schválenej žiadosti. Suma a doba trvania budú prevzaté zo žiadosti.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleConvertToLoan}>
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Comments */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle>Komentáre a história</CardTitle>
+                <CardDescription>Komunikácia a zmeny v žiadosti</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                {/* Add Comment */}
                 <div className="space-y-2">
-                  <Label htmlFor="interestRateAnnual">
-                    Úroková sadzba (% p.a.) <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="interestRateAnnual"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={convertFormData.interestRateAnnual}
-                    onChange={(e) =>
-                      setConvertFormData({ ...convertFormData, interestRateAnnual: e.target.value })
-                    }
-                    required
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Napíšte komentár..."
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    rows={3}
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="productType">
-                    Typ úveru <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={convertFormData.productType}
-                    onValueChange={(value: "AMORTIZING" | "INTEREST_ONLY") =>
-                      setConvertFormData({ ...convertFormData, productType: value })
-                    }
+                  <Button
+                    onClick={handleAddComment}
+                    disabled={isSubmittingComment || !newComment.trim()}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AMORTIZING">Amortizačný</SelectItem>
-                      <SelectItem value="INTEREST_ONLY">Úrokový</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Send className="mr-2 h-4 w-4" />
+                    {isSubmittingComment ? "Odosielám..." : "Pridať komentár"}
+                  </Button>
                 </div>
 
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="startDate">
-                    Dátum začiatku <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={convertFormData.startDate}
-                    onChange={(e) =>
-                      setConvertFormData({ ...convertFormData, startDate: e.target.value })
-                    }
-                    required
-                  />
+                {/* Comments List */}
+                <div className="space-y-3 mt-6">
+                  {comments.length === 0 ? (
+                    <p className="text-center text-slate-600 py-8">Žiadne komentáre</p>
+                  ) : (
+                    comments.map((comment) => (
+                      <div key={comment.id} className="border border-slate-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-slate-700">{comment.content}</p>
+                            <p className="text-xs text-slate-500 mt-2">
+                              {comment.createdBy} • {format(new Date(comment.createdAt), "dd.MM.yyyy HH:mm", { locale: sk })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">Náhľad úveru</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Status */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle>Status</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Badge className={`text-sm px-3 py-2 ${
+                  application.status === "APPROVED"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : application.status === "REJECTED"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-blue-100 text-blue-800"
+                }`}>
+                  {application.status}
+                </Badge>
+                <div className="mt-4 space-y-2 text-sm">
                   <div>
-                    <p className="text-blue-700">Suma:</p>
-                    <p className="font-semibold text-blue-900">€{(data.amount / 100).toLocaleString()}</p>
+                    <p className="text-slate-500">Vytvorená</p>
+                    <p className="font-medium text-slate-900">{format(new Date(application.createdAt), "dd.MM.yyyy HH:mm", { locale: sk })}</p>
                   </div>
                   <div>
-                    <p className="text-blue-700">Doba trvania:</p>
-                    <p className="font-semibold text-blue-900">{data.durationMonths} mesiacov</p>
-                  </div>
-                  <div>
-                    <p className="text-blue-700">Úrok:</p>
-                    <p className="font-semibold text-blue-900">{convertFormData.interestRateAnnual}% p.a.</p>
-                  </div>
-                  <div>
-                    <p className="text-blue-700">Typ:</p>
-                    <p className="font-semibold text-blue-900">
-                      {convertFormData.productType === "AMORTIZING" ? "Amortizačný" : "Úrokový"}
-                    </p>
+                    <p className="text-slate-500">Posledná zmena</p>
+                    <p className="font-medium text-slate-900">{format(new Date(application.updatedAt), "dd.MM.yyyy HH:mm", { locale: sk })}</p>
                   </div>
                 </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsConvertOpen(false)}
-                disabled={isSubmitting}
-              >
-                Zrušiť
-              </Button>
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Vytváram...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Vytvoriť úver
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle>Rýchle akcie</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-2">
+                <Button variant="outline" className="w-full border-slate-200 hover:border-blue-300 justify-start">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Priradiť agentovi
+                </Button>
+                <Button variant="outline" className="w-full border-slate-200 hover:border-blue-300 justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Požiadať o dokumenty
+                </Button>
+                <Button variant="outline" className="w-full border-slate-200 hover:border-blue-300 justify-start text-emerald-600 hover:text-emerald-700">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Schváliť
+                </Button>
+                <Button variant="outline" className="w-full border-slate-200 hover:border-red-300 justify-start text-red-600 hover:text-red-700">
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Zamietnuť
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Timeline */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle>Časová os</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full mt-1.5"></div>
+                      <div className="w-0.5 h-12 bg-slate-200 absolute left-1 top-4 ml-1"></div>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">Žiadosť vytvorená</p>
+                      <p className="text-sm text-slate-600">{format(new Date(application.createdAt), "dd.MM.yyyy", { locale: sk })}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

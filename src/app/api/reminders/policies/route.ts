@@ -1,39 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { reminderPolicies } from "@/db/schema";
+import { reminderPolicies } from "@/db/schema/reminder-policies";
+import { users } from "@/db/schema/users";
 import { reminderPolicyCreateSchema } from "@/lib/validators/reminder-policy";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
-/**
- * GET /api/reminders/policies
- * List all reminder policies for the organization
- */
 export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get user's organization_id from users table
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
-
-    if (!user?.organizationId) {
       return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const policies = await db.query.reminderPolicies.findMany({
-      where: eq(reminderPolicies.organizationId, user.organizationId),
-      orderBy: (policies, { asc }) => [asc(policies.daysAfterDue)],
-    });
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, userId))
+      .limit(1)
+      .then(rows => rows[0]);
 
-    return NextResponse.json({ policies });
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    const policies = await db
+      .select()
+      .from(reminderPolicies)
+      .where(eq(reminderPolicies.organizationId, user.organizationId))
+      .orderBy(reminderPolicies.daysAfterDue);
+
+    return NextResponse.json({ data: policies });
   } catch (error) {
     console.error("Error fetching reminder policies:", error);
     return NextResponse.json(
@@ -43,57 +46,58 @@ export async function GET() {
   }
 }
 
-/**
- * POST /api/reminders/policies
- * Create a new reminder policy
- */
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get user's organization_id and role
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
-
-    if (!user?.organizationId) {
       return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    // Only ADMIN, OWNER, SUPER_ADMIN can create policies
-    if (!["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, userId))
+      .limit(1)
+      .then(rows => rows[0]);
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Insufficient permissions" },
-        { status: 403 }
+        { error: "User not found" },
+        { status: 404 }
       );
     }
 
-    const body = await req.json();
-    const validatedData = reminderPolicyCreateSchema.parse(body);
+    const body = await request.json();
+    const validation = reminderPolicyCreateSchema.safeParse(body);
 
-    const [policy] = await db
-      .insert(reminderPolicies)
-      .values({
-        organizationId: user.organizationId,
-        ...validatedData,
-      })
-      .returning();
-
-    return NextResponse.json({ policy }, { status: 201 });
-  } catch (error) {
-    console.error("Error creating reminder policy:", error);
-    if (error instanceof Error && error.name === "ZodError") {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Invalid input data", details: error },
+        { error: "Validation error", details: validation.error.flatten() },
         { status: 400 }
       );
     }
+
+    const { daysAfterDue, reminderType, feeType, feeAmount, messageTemplate } =
+      validation.data;
+
+    const newPolicy = await db
+      .insert(reminderPolicies)
+      .values({
+        organizationId: user.organizationId,
+        daysAfterDue,
+        reminderType,
+        feeType,
+        feeAmount,
+        messageTemplate,
+      })
+      .returning();
+
+    return NextResponse.json({ data: newPolicy[0] }, { status: 201 });
+  } catch (error) {
+    console.error("Error creating reminder policy:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

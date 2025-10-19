@@ -1,51 +1,51 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { contractTemplates } from "@/db/schema";
-import { createContractTemplateSchema } from "@/lib/validators/contract-template";
-import { eq, desc } from "drizzle-orm";
+import { contractTemplates, organizations } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { contractTemplateCreateSchema } from "@/lib/validators/contract-template";
+import { NextRequest, NextResponse } from "next/server";
 
-/**
- * GET /api/contracts/templates
- * List all contract templates for the organization
- */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
+    // Get user's organization
+    const user = await db
+      .select()
+      .from("users")
+      .where(eq("users.clerkId", userId))
+      .limit(1)
+      .execute();
 
-    if (!user?.organizationId) {
-      return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
-      );
+    if (!user || user.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const templates = await db.query.contractTemplates.findMany({
-      where: eq(contractTemplates.organizationId, user.organizationId),
-      orderBy: [desc(contractTemplates.createdAt)],
-    });
+    const organizationId = (user[0] as any).organizationId;
 
-    return NextResponse.json({ templates });
+    // Fetch templates
+    const templates = await db
+      .select()
+      .from(contractTemplates)
+      .where(eq(contractTemplates.organizationId, organizationId))
+      .orderBy(contractTemplates.createdAt);
+
+    return NextResponse.json({
+      success: true,
+      data: templates,
+    });
   } catch (error) {
-    console.error("Error fetching contract templates:", error);
+    console.error("Error fetching templates:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch templates" },
       { status: 500 }
     );
   }
 }
 
-/**
- * POST /api/contracts/templates
- * Create a new contract template
- */
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -53,47 +53,55 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-    });
-
-    if (!user?.organizationId) {
-      return NextResponse.json(
-        { error: "User not associated with organization" },
-        { status: 403 }
-      );
-    }
-
-    // Only ADMIN, OWNER, SUPER_ADMIN can create templates
-    if (!["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
-      return NextResponse.json(
-        { error: "Insufficient permissions" },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json();
-    const validatedData = createContractTemplateSchema.parse({
-      ...body,
-      organizationId: user.organizationId,
-    });
+    const validation = contractTemplateCreateSchema.safeParse(body);
 
-    const [template] = await db
-      .insert(contractTemplates)
-      .values(validatedData)
-      .returning();
-
-    return NextResponse.json({ template }, { status: 201 });
-  } catch (error) {
-    console.error("Error creating contract template:", error);
-    if (error instanceof Error && error.name === "ZodError") {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Invalid input data", details: error },
+        { error: "Validation failed", details: validation.error.errors },
         { status: 400 }
       );
     }
+
+    // Get user's organization
+    const user = await db
+      .select()
+      .from("users")
+      .where(eq("users.clerkId", userId))
+      .limit(1)
+      .execute();
+
+    if (!user || user.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const organizationId = (user[0] as any).organizationId;
+
+    // Create template
+    const result = await db
+      .insert(contractTemplates)
+      .values({
+        organizationId,
+        name: validation.data.name,
+        type: validation.data.type,
+        templateContent: validation.data.templateContent,
+        isActive: validation.data.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        success: true,
+        data: result[0],
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Error creating template:", error);
+    return NextResponse.json(
+      { error: "Failed to create template" },
       { status: 500 }
     );
   }
