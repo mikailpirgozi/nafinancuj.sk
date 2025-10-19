@@ -27,7 +27,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { InstallmentSchedule } from "@/components/installment-schedule";
+import { InstallmentSchedule } from "@/components/installment-schedule-improved";
 import { PaymentForm } from "@/components/payment-form";
 import { CollateralForm } from "@/components/collateral-form";
 import { EarlyRepaymentDialog } from "@/components/early-repayment-dialog";

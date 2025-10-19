@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   CheckCircle,
   Clock,
@@ -31,6 +30,21 @@ interface FormData {
   amount: string;
   purpose: string;
   durationMonths: string;
+  // Complex form fields
+  dic?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+  legalForm?: string;
+  yearEstablished?: string;
+  numberOfEmployees?: string;
+  annualRevenue?: string;
+  monthlyRevenue?: string;
+  monthlyExpenses?: string;
+  existingLoans?: string;
+  collateralType?: string;
+  collateralValue?: string;
+  collateralDescription?: string;
 }
 
 export default function ApplyPage() {
@@ -46,6 +60,21 @@ export default function ApplyPage() {
     amount: "",
     purpose: "",
     durationMonths: "12",
+    // Complex form fields
+    dic: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    legalForm: "sro",
+    yearEstablished: "",
+    numberOfEmployees: "",
+    annualRevenue: "",
+    monthlyRevenue: "",
+    monthlyExpenses: "",
+    existingLoans: "",
+    collateralType: "",
+    collateralValue: "",
+    collateralDescription: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -201,32 +230,102 @@ export default function ApplyPage() {
           </Card>
         </div>
 
+        {/* Form Type Selection */}
+        <div className="max-w-5xl mx-auto mb-8">
+          <h3 className="text-2xl font-bold text-center text-white mb-6">Vyberte typ formulára</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <button
+              onClick={() => setUseComplexForm(false)}
+              className={`p-6 rounded-2xl border-4 transition-all ${
+                !useComplexForm
+                  ? "border-blue-500 bg-white shadow-2xl scale-105"
+                  : "border-white/30 bg-white/80 hover:border-white/50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-2xl font-bold text-slate-900">Jednoduchý formulár</h4>
+                {!useComplexForm && (
+                  <CheckCircle className="h-8 w-8 text-blue-600" />
+                )}
+              </div>
+              <p className="text-slate-600 mb-4">
+                Rýchle vyplnenie základných údajov. Ideálne pre prvý kontakt.
+              </p>
+              <ul className="space-y-2 text-left">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Základné firemné údaje</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Kontaktné informácie</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Požadovaná suma a účel</span>
+                </li>
+              </ul>
+              <div className="mt-4 text-sm font-semibold text-blue-600">
+                ⏱️ Vyplnenie: ~2 minúty
+              </div>
+            </button>
+
+            <button
+              onClick={() => setUseComplexForm(true)}
+              className={`p-6 rounded-2xl border-4 transition-all ${
+                useComplexForm
+                  ? "border-emerald-500 bg-white shadow-2xl scale-105"
+                  : "border-white/30 bg-white/80 hover:border-white/50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-2xl font-bold text-slate-900">Komplexný formulár</h4>
+                {useComplexForm && (
+                  <CheckCircle className="h-8 w-8 text-emerald-600" />
+                )}
+              </div>
+              <p className="text-slate-600 mb-4">
+                Detailné údaje s možnosťou nahrať dokumenty. Urýchli schvaľovací proces.
+              </p>
+              <ul className="space-y-2 text-left">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Všetky firemné údaje</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Finančné výkazy a dokumenty</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Kolaterály a záruky</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700">Okamžité spracovanie</span>
+                </li>
+              </ul>
+              <div className="mt-4 text-sm font-semibold text-emerald-600">
+                ⚡ Spracovanie: o 70% rýchlejšie
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Form */}
         <Card className="max-w-3xl mx-auto border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <CardTitle className="text-3xl mb-2">Žiadosť o úver</CardTitle>
-                <CardDescription className="text-base">
-                  Vyplňte formulár a my vás budeme kontaktovať
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-3">
-                <Label htmlFor="complex-form" className="text-sm">
-                  {useComplexForm ? "Komplexný" : "Jednoduchý"}
-                </Label>
-                <Switch
-                  id="complex-form"
-                  checked={useComplexForm}
-                  onCheckedChange={setUseComplexForm}
-                />
-              </div>
+            <div className="mb-4">
+              <CardTitle className="text-3xl mb-2">
+                {useComplexForm ? "Komplexná žiadosť o úver" : "Jednoduchá žiadosť o úver"}
+              </CardTitle>
+              <CardDescription className="text-base">
+                {useComplexForm 
+                  ? "Vyplňte všetky údaje a nahrajte dokumenty pre rýchle schválenie"
+                  : "Vyplňte základné údaje a my vás budeme kontaktovať"
+                }
+              </CardDescription>
             </div>
-            {useComplexForm && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
-                <strong>💡 Tip:</strong> Dodanie všetkých dokladov výrazne urýchli spracovanie vašej žiadosti
-              </div>
-            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
@@ -251,16 +350,129 @@ export default function ApplyPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="ico">IČO</Label>
+                      <Label htmlFor="ico">
+                        IČO {useComplexForm && <span className="text-red-500">*</span>}
+                      </Label>
                       <Input
                         id="ico"
                         value={formData.ico}
                         onChange={(e) => setFormData({ ...formData, ico: e.target.value })}
                         placeholder="12345678"
                         maxLength={8}
+                        required={useComplexForm}
                       />
                     </div>
                   </div>
+
+                  {useComplexForm && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="dic">DIČ</Label>
+                          <Input
+                            id="dic"
+                            value={formData.dic}
+                            onChange={(e) => setFormData({ ...formData, dic: e.target.value })}
+                            placeholder="SK2012345678"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="legalForm">
+                            Právna forma <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={formData.legalForm}
+                            onValueChange={(value) => setFormData({ ...formData, legalForm: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sro">s.r.o.</SelectItem>
+                              <SelectItem value="as">a.s.</SelectItem>
+                              <SelectItem value="szco">SZČO</SelectItem>
+                              <SelectItem value="vos">v.o.s.</SelectItem>
+                              <SelectItem value="ks">k.s.</SelectItem>
+                              <SelectItem value="other">Iné</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="address">
+                          Adresa sídla <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="address"
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          placeholder="Hlavná 123"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">
+                            Mesto <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="city"
+                            value={formData.city}
+                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            placeholder="Bratislava"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="zipCode">
+                            PSČ <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="zipCode"
+                            value={formData.zipCode}
+                            onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                            placeholder="81101"
+                            maxLength={5}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="yearEstablished">
+                            Rok založenia <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="yearEstablished"
+                            type="number"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            value={formData.yearEstablished}
+                            onChange={(e) => setFormData({ ...formData, yearEstablished: e.target.value })}
+                            placeholder="2020"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="numberOfEmployees">
+                            Počet zamestnancov <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="numberOfEmployees"
+                            type="number"
+                            min="0"
+                            value={formData.numberOfEmployees}
+                            onChange={(e) => setFormData({ ...formData, numberOfEmployees: e.target.value })}
+                            placeholder="5"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Contact Info */}
@@ -370,6 +582,131 @@ export default function ApplyPage() {
                     />
                   </div>
                 </div>
+
+                {/* Financial Info - Complex Form Only */}
+                {useComplexForm && (
+                  <div className="space-y-4 bg-gradient-to-br from-emerald-50 to-blue-50 p-6 rounded-xl border-2 border-emerald-200">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-emerald-600" />
+                      Finančné údaje
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="annualRevenue">
+                          Ročný obrat (€) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="annualRevenue"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          value={formData.annualRevenue}
+                          onChange={(e) => setFormData({ ...formData, annualRevenue: e.target.value })}
+                          placeholder="100000"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="monthlyRevenue">
+                          Mesačné príjmy (€) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="monthlyRevenue"
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={formData.monthlyRevenue}
+                          onChange={(e) => setFormData({ ...formData, monthlyRevenue: e.target.value })}
+                          placeholder="8000"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="monthlyExpenses">
+                          Mesačné výdavky (€) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="monthlyExpenses"
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={formData.monthlyExpenses}
+                          onChange={(e) => setFormData({ ...formData, monthlyExpenses: e.target.value })}
+                          placeholder="6000"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="existingLoans">Existujúce úvery a záväzky</Label>
+                      <Textarea
+                        id="existingLoans"
+                        value={formData.existingLoans}
+                        onChange={(e) => setFormData({ ...formData, existingLoans: e.target.value })}
+                        placeholder="Uveďte existujúce úvery, ich výšku a mesačné splátky..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Collateral Info - Complex Form Only */}
+                {useComplexForm && (
+                  <div className="space-y-4 bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl border-2 border-blue-200">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-blue-600" />
+                      Kolaterál / Záruka
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Poskytnutie kolaterálu môže výrazne urýchliť schválenie úveru a znížiť úrokovú sadzbu
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="collateralType">Typ kolaterálu</Label>
+                        <Select
+                          value={formData.collateralType}
+                          onValueChange={(value) => setFormData({ ...formData, collateralType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Vyberte typ..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="real_estate">Nehnuteľnosť</SelectItem>
+                            <SelectItem value="vehicle">Vozidlo</SelectItem>
+                            <SelectItem value="equipment">Zariadenie/Stroje</SelectItem>
+                            <SelectItem value="inventory">Zásoby</SelectItem>
+                            <SelectItem value="receivables">Pohľadávky</SelectItem>
+                            <SelectItem value="guarantee">Bankové záruka</SelectItem>
+                            <SelectItem value="other">Iné</SelectItem>
+                            <SelectItem value="none">Bez kolaterálu</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="collateralValue">Odhadovaná hodnota (€)</Label>
+                        <Input
+                          id="collateralValue"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          value={formData.collateralValue}
+                          onChange={(e) => setFormData({ ...formData, collateralValue: e.target.value })}
+                          placeholder="50000"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="collateralDescription">Popis kolaterálu</Label>
+                      <Textarea
+                        id="collateralDescription"
+                        value={formData.collateralDescription}
+                        onChange={(e) => setFormData({ ...formData, collateralDescription: e.target.value })}
+                        placeholder="Detailný popis kolaterálu (napr. adresa nehnuteľnosti, značka a model vozidla, typ zariadenia...)"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
