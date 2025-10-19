@@ -9,7 +9,7 @@ import { desc } from "drizzle-orm";
  * GET /api/organizations
  * Get all organizations (Super Admin only)
  */
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const user = await requireAuth();
 
@@ -28,10 +28,19 @@ export async function GET(_request: NextRequest) {
       .from(organizations)
       .orderBy(desc(organizations.createdAt));
 
-    return NextResponse.json({
-      success: true,
-      data: result,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching organizations:", error);
 

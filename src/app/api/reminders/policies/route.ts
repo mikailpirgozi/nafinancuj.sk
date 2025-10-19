@@ -3,13 +3,13 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { reminderPolicies } from "@/db/schema";
 import { reminderPolicyCreateSchema } from "@/lib/validators/reminder-policy";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 /**
  * GET /api/reminders/policies
  * List all reminder policies for the organization
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {

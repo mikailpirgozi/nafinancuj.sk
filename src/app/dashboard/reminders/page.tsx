@@ -465,7 +465,7 @@ Váš tím`,
           </p>
           <p>
             <strong>3. Manuálne spustenie:</strong> Môžete kedykoľvek spustiť generovanie
-            upomienok manuálne tlačidlom "Spustiť upomienky".
+            upomienok manuálne tlačidlom &ldquo;Spustiť upomienky&rdquo;.
           </p>
           <p>
             <strong>4. Viacero politík:</strong> Môžete vytvoriť viacero politík (napr. 7 dní =

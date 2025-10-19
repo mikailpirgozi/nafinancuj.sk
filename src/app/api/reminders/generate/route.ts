@@ -76,6 +76,18 @@ export async function POST(req: NextRequest) {
     let totalFeesCharged = 0;
 
     for (const installment of overdueInstallments) {
+      const loanOrgId = installment.loan?.organizationId;
+      
+      if (!loanOrgId) {
+        console.warn(`Loan ${installment.loanId} has no organizationId`);
+        continue;
+      }
+
+      // Filter by organizationId if manual trigger
+      if (organizationId && loanOrgId !== organizationId) {
+        continue;
+      }
+
       const daysOverdue = Math.floor(
         (today.getTime() - new Date(installment.dueDate).getTime()) /
           (1000 * 60 * 60 * 24)
@@ -84,7 +96,7 @@ export async function POST(req: NextRequest) {
       // Get applicable reminder policies for this organization
       const policies = await db.query.reminderPolicies.findMany({
         where: and(
-          eq(reminderPolicies.organizationId, installment.loan.organizationId),
+          eq(reminderPolicies.organizationId, loanOrgId),
           eq(reminderPolicies.daysAfterDue, daysOverdue)
         ),
       });
@@ -102,14 +114,16 @@ export async function POST(req: NextRequest) {
           continue; // Skip if already sent
         }
 
-        // Calculate fee
-        let feeAmount = 0;
+        // Calculate fee in cents
+        let feeAmountCents = 0;
         if (policy.feeType === "FIXED") {
-          feeAmount = Number(policy.feeAmount);
+          feeAmountCents = Math.round(Number(policy.feeAmount) * 100);
         } else if (policy.feeType === "PERCENTAGE") {
-          const remainingAmount =
-            Number(installment.totalAmount) - Number(installment.paidAmount);
-          feeAmount = (remainingAmount * Number(policy.feeAmount)) / 100;
+          const remainingAmountCents =
+            installment.totalAmount - installment.paidAmount;
+          feeAmountCents = Math.round(
+            (remainingAmountCents * Number(policy.feeAmount)) / 100
+          );
         }
 
         // Create reminder record
@@ -117,21 +131,19 @@ export async function POST(req: NextRequest) {
           installmentId: installment.id,
           policyId: policy.id,
           sentAt: new Date(),
-          feeCharged: feeAmount.toString(),
+          feeCharged: feeAmountCents,
         });
 
         // Update installment with fee (add to total_amount)
-        if (feeAmount > 0) {
+        if (feeAmountCents > 0) {
           await db
             .update(installments)
             .set({
-              totalAmount: (
-                Number(installment.totalAmount) + feeAmount
-              ).toString(),
+              totalAmount: installment.totalAmount + feeAmountCents,
             })
             .where(eq(installments.id, installment.id));
 
-          totalFeesCharged += feeAmount;
+          totalFeesCharged += feeAmountCents / 100;
         }
 
         // Send notification (email or SMS)
@@ -139,7 +151,7 @@ export async function POST(req: NextRequest) {
           policy.reminderType,
           installment,
           policy.messageTemplate,
-          feeAmount
+          feeAmountCents / 100
         );
 
         remindersGenerated++;
@@ -166,7 +178,22 @@ export async function POST(req: NextRequest) {
  */
 async function sendReminderNotification(
   type: "EMAIL" | "SMS",
-  installment: any,
+  installment: {
+    totalAmount: number;
+    dueDate: string;
+    loanId: string;
+    loan: {
+      amount: number;
+      variableSymbol: string | null;
+      client: {
+        id: string;
+        companyName: string | null;
+        contactPerson: string;
+        email: string;
+        phone: string | null;
+      };
+    };
+  },
   template: string,
   feeAmount: number
 ) {
@@ -177,11 +204,11 @@ async function sendReminderNotification(
   const client = installment.loan.client;
   const loan = installment.loan;
 
-  // Replace template variables
+  // Replace template variables (convert cents to euros)
   const message = template
     .replace(/\{\{client_name\}\}/g, client.companyName || client.contactPerson)
-    .replace(/\{\{loan_amount\}\}/g, loan.amount)
-    .replace(/\{\{installment_amount\}\}/g, installment.totalAmount)
+    .replace(/\{\{loan_amount\}\}/g, (loan.amount / 100).toFixed(2))
+    .replace(/\{\{installment_amount\}\}/g, (installment.totalAmount / 100).toFixed(2))
     .replace(
       /\{\{due_date\}\}/g,
       new Date(installment.dueDate).toLocaleDateString("sk-SK")

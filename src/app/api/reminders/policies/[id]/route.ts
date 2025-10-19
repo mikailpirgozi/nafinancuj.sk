@@ -80,7 +80,7 @@ export async function PATCH(
  * Delete a reminder policy
  */
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

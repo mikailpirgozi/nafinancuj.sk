@@ -9,7 +9,7 @@ import {
   generateInterestOnlySchedule,
   annualToMonthlyRate,
 } from "@/lib/services/loan-calculator";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /**
  * GET /api/loans
@@ -28,16 +28,36 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(loans.status, status as never));
     }
 
-    const result = await db
-      .select()
-      .from(loans)
-      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
-      .orderBy(desc(loans.createdAt));
-
-    return NextResponse.json({
-      success: true,
-      data: result,
+    // Fetch loans with client data
+    const result = await db.query.loans.findMany({
+      where: conditions.length > 1 ? and(...conditions) : conditions[0],
+      with: {
+        client: {
+          columns: {
+            id: true,
+            companyName: true,
+            contactPerson: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: (loans, { desc }) => [desc(loans.createdAt)],
     });
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: result,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching loans:", error);
 

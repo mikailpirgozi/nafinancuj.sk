@@ -12,4 +12,5 @@ export * from "./reminder-policies";
 export * from "./reminders";
 export * from "./contract-templates";
 export * from "./audit-logs";
+export * from "./relations";
 

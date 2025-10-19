@@ -9,7 +9,7 @@ import { eq, desc } from "drizzle-orm";
  * GET /api/clients
  * Get all clients for the current organization
  */
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const { organizationId } = await requireOrganization();
 
@@ -19,10 +19,19 @@ export async function GET(_request: NextRequest) {
       .where(eq(clients.organizationId, organizationId))
       .orderBy(desc(clients.createdAt));
 
-    return NextResponse.json({
-      success: true,
-      data: result,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching clients:", error);
 

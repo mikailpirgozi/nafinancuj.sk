@@ -1,197 +1,350 @@
-# Nafinancuj.sk Platform
+# 🏦 Nafinancuj.sk - Platforma pre správu podnikateľských pôžičiek
 
-Automatizovaná multi-tenant platforma pre správu podnikateľských pôžičiek s kompletným CRM systémom, splátkových kalendárom, upomienkami a dokumentmi.
+Automatizovaná platforma pre správu podnikateľských pôžičiek s pokročilými funkciami pre finančné inštitúcie.
 
-## 🎯 Popis
+## ✨ Hlavné funkcie
 
-Nafinancuj.sk je interný CRM systém pre správu zabezpečených krátkodobých pôžičiek pre slovenských podnikateľov. Systém automatizuje celý proces od prijatia žiadosti cez schválenie až po správu splátok a upomienok.
+### 🔔 Automatické upomienky
+- Konfigurovateľné politiky upomienok
+- Email a SMS notifikácie (Resend + Twilio)
+- Automatické pripočítanie poplatkov
+- Vercel Cron job (denne o 6:00)
+- Šablóny správ s premennými
+
+### 📊 Dashboardy
+- **Super Admin Dashboard** - Prehľad všetkých organizácií
+- **Main Dashboard** - Štatistiky úverov, grafy, reporty
+- Export do Excel/CSV
+- Real-time metriky
+
+### 💼 Správa úverov
+- Amortizačné a úrokové úvery
+- Automatický výpočet splátok
+- Splátkové kalendáre
+- Sledovanie platieb
+- Kolaterály
+
+### 👥 Multi-tenancy
+- Organizácie s vlastnými nastaveniami
+- RBAC (Super Admin, Admin, Owner, Agent)
+- Row-level security
+
+### 📄 Dokumenty
+- Supabase Storage integrácia
+- Upload a správa dokumentov
+- Automatické kategorizácie
 
 ## 🚀 Tech Stack
 
-### Frontend & Backend
-- **Next.js 15** (App Router) + TypeScript
-- **Next.js API Routes**
+- **Framework:** Next.js 15 (App Router)
+- **Database:** PostgreSQL + Drizzle ORM
+- **Auth:** Clerk
+- **Storage:** Supabase
+- **UI:** React 19, Tailwind CSS 4, shadcn/ui
+- **Grafy:** Recharts
+- **Email:** Resend
+- **SMS:** Twilio
+- **Testing:** Vitest, Playwright
+- **CI/CD:** GitHub Actions
+- **Deploy:** Vercel
 
-### Database & ORM
-- **Supabase PostgreSQL**
-- **Drizzle ORM**
+## 📦 Installation
 
-### Auth & Storage
-- **Clerk** (autentifikácia a user management)
-- **Supabase Storage** (dokumenty, PDF)
+### Prerequisites
 
-### UI & Forms
-- **Tailwind CSS** + **shadcn/ui**
-- **React Hook Form** + **Zod** validácia
-- Design podľa nafinancuj.sk (tmavomodrá/oranžová schéma)
-
-### Data & PDF
-- **TanStack Query** (React Query)
-- **@react-pdf/renderer**
-
-### Notifications
-- **Resend** (email)
-- **Twilio** (SMS)
-
-### Hosting & Monitoring
-- **Vercel**
-- **Sentry**
-
-### Multi-tenant
-- Single database s `organization_id` column
-- Row-level security
-
-## 📋 Hlavné Funkcie
-
-### 1. Multi-tenant Architektúra
-- Super Admin môže spravovať viacero organizácií
-- Každá organizácia má vlastných používateľov, klientov a úvery
-- Kompletná izolácia dát medzi organizáciami
-
-### 2. CRM Modul
-- Prijímanie žiadostí z webového formulára
-- Workflow: Nová → Kontrola → Podklady → Schválenie
-- Priraďovanie žiadostí agentom
-- Upload a správa dokumentov
-
-### 3. Správa Úverov
-- Dva typy produktov: Amortizačný a Interest-only
-- Automatické generovanie splátkového kalendára
-- Variabilné symboly pre párovanie platieb
-- Zabezpečenia (nehnuteľnosti, autá)
-
-### 4. Platby a Splátky
-- Manuálne pridávanie platieb
-- CSV import z banky (Tatra banka)
-- Automatické párovanie podľa VS
-- Čiastočné platby
-- Predčasné splatenie (50% zľava na úroky)
-
-### 5. Upomienky
-- Konfigurovateľná politika pre každú organizáciu
-- Automatické generovanie (Vercel Cron)
-- Email a SMS notifikácie
-- Automatické pripočítanie poplatkov
-
-### 6. PDF Generátor
-- Flexibilný systém šablón zmlúv
-- Admin môže vytvárať vlastné šablóny
-- Automatické generovanie PDF
-- Premenné v šablónach
-
-### 7. Dashboardy a Reporty
-- Super Admin: Prehľad všetkých organizácií
-- Admin/Owner: Štatistiky úverov a žiadostí
-- Agent: Moje žiadosti a úvery
-- Export do Excel/CSV
-
-## 🛠️ Setup
-
-### Požiadavky
 - Node.js 20+
 - pnpm 10+
-- PostgreSQL (Supabase)
+- PostgreSQL database
+- Clerk account
+- Supabase account
 
-### Inštalácia
+### Setup
 
+1. **Clone repository**
 ```bash
-# Klonovanie repository
 git clone <repository-url>
 cd nafinancuj-sk
+```
 
-# Inštalácia závislostí
+2. **Install dependencies**
+```bash
 pnpm install
+```
 
-# Skopírovanie .env.example do .env.local
+3. **Setup environment variables**
+```bash
 cp .env.example .env.local
+```
 
-# Vyplnenie environment premenných v .env.local
-# DATABASE_URL, CLERK keys, SUPABASE keys, atď.
+Edit `.env.local` with your credentials:
 
-# Spustenie Drizzle migrácií
-pnpm db:migrate
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/nafinancuj
 
-# Seed dát (demo organizácia)
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Resend (Email)
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=noreply@nafinancuj.sk
+
+# Twilio (SMS)
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
+TWILIO_PHONE_NUMBER=+421...
+
+# Vercel Cron
+CRON_SECRET=your-random-secret-string
+```
+
+4. **Setup database**
+```bash
+pnpm db:push
+```
+
+5. **Seed demo data (optional)**
+```bash
 pnpm db:seed
+```
 
-# Spustenie dev servera
+6. **Run development server**
+```bash
 pnpm dev
 ```
 
-Server beží na `http://localhost:3000`
+Open [http://localhost:3000](http://localhost:3000)
 
-## 📝 Skripty
+## 🧪 Testing
 
+### Unit Tests
 ```bash
-pnpm dev          # Spustenie dev servera (port 3000)
-pnpm build        # Build pre produkciu
-pnpm start        # Spustenie produkčného servera
-pnpm lint         # ESLint kontrola
-pnpm lint:fix     # ESLint oprava
-pnpm typecheck    # TypeScript kontrola
-pnpm format       # Prettier formátovanie
-pnpm format:check # Prettier kontrola
+# Run once
+pnpm test:unit
+
+# Watch mode
+pnpm test:watch
+
+# With UI
+pnpm test:ui
+
+# Coverage
+pnpm test:coverage
 ```
 
-## 🗄️ Dátový Model
+### E2E Tests
+```bash
+# Run E2E tests
+pnpm test:e2e
 
-### Core Entities
-- **organizations** – Organizácie (firmy používajúce systém)
-- **users** – Používatelia (Super Admin, Owner, Admin, Agent, Viewer)
-- **clients** – Firemní klienti (dlžníci)
-- **applications** – Žiadosti o pôžičku
-- **loans** – Schválené úvery
-- **installments** – Splátkový kalendár
-- **payments** – Evidencia platieb
-- **collaterals** – Zabezpečenia
-- **documents** – Nahrané dokumenty
-- **reminder_policies** – Politika upomienok
-- **reminders** – Odoslané upomienky
-- **contract_templates** – Šablóny zmlúv
-- **audit_logs** – Audit trail
+# With UI
+pnpm test:e2e:ui
+```
 
-## 🔐 Role a Permissions
+### All checks
+```bash
+pnpm ci
+```
 
-- **SUPER_ADMIN** – Správa všetkých organizácií
-- **OWNER** – Vlastník organizácie, plný prístup
-- **ADMIN** – Administrátor, plný prístup k dátam
-- **AGENT** – Spracúva žiadosti a úvery
-- **VIEWER** – Len čítanie
+## 📝 Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm lint` | Run ESLint |
+| `pnpm typecheck` | Run TypeScript check |
+| `pnpm test:unit` | Run unit tests |
+| `pnpm test:e2e` | Run E2E tests |
+| `pnpm db:push` | Push schema to database |
+| `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm db:seed` | Seed demo data |
+| `pnpm ci` | Run all checks (CI) |
+
+## 🏗️ Project Structure
+
+```
+nafinancuj-sk/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── api/               # API routes
+│   │   │   ├── applications/
+│   │   │   ├── clients/
+│   │   │   ├── contracts/
+│   │   │   ├── loans/
+│   │   │   ├── payments/
+│   │   │   └── reminders/
+│   │   ├── dashboard/         # Dashboard pages
+│   │   │   ├── admin/        # Super Admin
+│   │   │   └── reminders/    # Reminders management
+│   │   └── sign-in/          # Auth pages
+│   ├── components/
+│   │   ├── ui/               # shadcn/ui components
+│   │   └── providers.tsx     # React Query provider
+│   ├── db/
+│   │   ├── schema/           # Drizzle schemas
+│   │   └── index.ts          # Database client
+│   ├── lib/
+│   │   ├── services/         # Business logic
+│   │   ├── validators/       # Zod schemas
+│   │   ├── auth.ts           # Auth helpers
+│   │   └── utils.ts          # Utilities
+│   ├── scripts/
+│   │   └── seed.ts           # Seed script
+│   └── test/
+│       ├── setup.ts          # Test setup
+│       └── e2e/              # E2E tests
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # CI/CD pipeline
+├── vitest.config.ts          # Vitest config
+├── playwright.config.ts      # Playwright config
+└── vercel.json               # Vercel config (Cron)
+```
+
+## 🔐 Security
+
+### Implemented
+- ✅ Clerk authentication
+- ✅ RBAC (Role-Based Access Control)
+- ✅ Row-level security (organization_id filter)
+- ✅ Zod input validation
+- ✅ Rate limiting middleware
+- ✅ HTTPS only (Vercel)
+- ✅ Environment variables protection
+
+### Best Practices
+- Never commit `.env.local`
+- Use strong passwords
+- Rotate API keys regularly
+- Monitor logs for suspicious activity
+- Keep dependencies updated
+
+## 📈 Performance
+
+### Optimizations
+- ✅ Next.js App Router (RSC)
+- ✅ React Server Components
+- ✅ Database indexes
+- ✅ Query optimization (Drizzle)
+- ✅ Image optimization (Next.js)
+- ✅ Code splitting
+- ✅ Lazy loading
+
+### Monitoring
+- Vercel Analytics
+- Vercel Logs
+- Database query performance
 
 ## 🚀 Deployment
 
-Aplikácia je optimalizovaná pre Vercel:
+### Vercel (Recommended)
+
+1. **Connect GitHub repository**
+2. **Add environment variables** in Vercel dashboard
+3. **Deploy**
 
 ```bash
-# Push do GitHub
-git push origin main
-
-# Vercel automaticky deployuje
+vercel --prod
 ```
 
-## 📚 Dokumentácia
+### Manual Deploy
 
-Detailná implementačná dokumentácia je v súbore `nafinancuj-sk-platform.plan.md`.
+1. **Build**
+```bash
+pnpm build
+```
 
-## 🔒 Bezpečnosť
+2. **Start**
+```bash
+pnpm start
+```
 
-- ✅ HTTPS (Vercel automaticky)
-- ✅ Rate limiting
-- ✅ Input validation (Zod)
-- ✅ Row-level security (organization_id)
-- ✅ Audit logs
-- ✅ GDPR compliance
-- ✅ Secure file uploads (signed URLs)
+## 🔄 CI/CD
 
-## 📄 Licencia
+GitHub Actions workflow automatically:
+- Runs ESLint
+- Runs TypeScript check
+- Runs unit tests
+- Builds application
+- Deploys to Vercel (on main branch)
 
-Proprietary - Všetky práva vyhradené.
+## 📚 Documentation
 
-## 👥 Tím
+- [Reminder System Setup](./REMINDERS_SETUP.md)
+- [Implementation Summary](./FINAL_IMPLEMENTATION_SUMMARY.md)
+- [Project Summary](./PROJECT_SUMMARY.md)
 
-Vyvinuté pre nafinancuj.sk
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+### Code Standards
+- TypeScript strict mode
+- ESLint (no warnings)
+- Prettier formatting
+- Unit tests for business logic
+- E2E tests for critical flows
+
+## 📄 License
+
+Private - All rights reserved
+
+## 👥 Team
+
+- **Developer:** [Your Name]
+- **Organization:** Nafinancuj.sk
+
+## 🆘 Support
+
+For issues and questions:
+- GitHub Issues
+- Email: support@nafinancuj.sk
+
+## 🎯 Roadmap
+
+### ✅ Completed
+- [x] Core loan management
+- [x] Reminder system
+- [x] Dashboards with charts
+- [x] Excel export
+- [x] Testing setup
+- [x] CI/CD pipeline
+- [x] Rate limiting
+- [x] Seed data
+
+### 🔜 Planned
+- [ ] PDF contract generator
+- [ ] Template editor UI
+- [ ] Agent dashboard
+- [ ] WhatsApp notifications
+- [ ] Advanced reporting
+- [ ] Mobile app
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/)
+- [Clerk](https://clerk.com/)
+- [Supabase](https://supabase.com/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Vercel](https://vercel.com/)
 
 ---
 
-**Verzia:** 0.1.0  
-**Posledná aktualizácia:** Október 2025
+**Made with ❤️ for financial institutions in Slovakia**
+
+🏦 **Nafinancuj.sk** - Automatizácia pre finančné inštitúcie
