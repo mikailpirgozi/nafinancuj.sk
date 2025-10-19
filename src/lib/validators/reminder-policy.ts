@@ -1,31 +1,14 @@
 import { z } from "zod";
 
-export const reminderTypeSchema = z.enum(["EMAIL", "SMS"]);
-
-export const feeTypeSchema = z.enum(["FIXED", "PERCENTAGE"]);
-
-export const createReminderPolicySchema = z.object({
-  organizationId: z.string().uuid("Neplatné ID organizácie"),
-  daysAfterDue: z.number().int().positive("Dni musia byť kladné"),
-  reminderType: reminderTypeSchema,
-  feeType: feeTypeSchema,
-  feeAmount: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Neplatná výška poplatku")
-    .transform((val) => val), // For FIXED: amount in EUR, for PERCENTAGE: percentage value
-  messageTemplate: z.string().min(1, "Šablóna správy je povinná"),
+export const reminderPolicyCreateSchema = z.object({
+  daysAfterDue: z.number().int().min(0).max(365),
+  reminderType: z.enum(["EMAIL", "SMS"]),
+  feeType: z.enum(["FIXED", "PERCENTAGE"]),
+  feeAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid amount format"),
+  messageTemplate: z.string().min(10).max(1000),
 });
 
-export const updateReminderPolicySchema = createReminderPolicySchema
-  .partial()
-  .omit({ organizationId: true });
+export const reminderPolicyUpdateSchema = reminderPolicyCreateSchema.partial();
 
-export type ReminderType = z.infer<typeof reminderTypeSchema>;
-export type FeeType = z.infer<typeof feeTypeSchema>;
-export type CreateReminderPolicyInput = z.infer<
-  typeof createReminderPolicySchema
->;
-export type UpdateReminderPolicyInput = z.infer<
-  typeof updateReminderPolicySchema
->;
-
+export type ReminderPolicyCreate = z.infer<typeof reminderPolicyCreateSchema>;
+export type ReminderPolicyUpdate = z.infer<typeof reminderPolicyUpdateSchema>;
