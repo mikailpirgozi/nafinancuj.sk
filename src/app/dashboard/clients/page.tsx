@@ -107,6 +107,8 @@ export default function ClientsPage() {
     notes: "",
   });
 
+  const [loadingFinstat, setLoadingFinstat] = useState(false);
+
   useEffect(() => {
     setMounted(true);
     fetchClients();
@@ -205,6 +207,38 @@ export default function ClientsPage() {
       foundedAt: "",
       notes: "",
     });
+  };
+
+  const fetchFromFinstat = async () => {
+    if (!formData.ico || formData.ico.length !== 8) {
+      toast.error("Zadajte platné IČO (8 číslic)");
+      return;
+    }
+
+    setLoadingFinstat(true);
+    try {
+      const response = await fetch(`/api/finstat/${formData.ico}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setFormData({
+          ...formData,
+          companyName: result.data.name,
+          dic: result.data.dic || "",
+          address: result.data.address.street,
+          city: result.data.address.city,
+          postalCode: result.data.address.zip,
+        });
+        toast.success("Údaje načítané z Finstat");
+      } else {
+        toast.error("Firma nenájdená v registri");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Chyba pri načítaní údajov z Finstat");
+    } finally {
+      setLoadingFinstat(false);
+    }
   };
 
   const thisMonthClients = clients.filter((c) => {
@@ -638,13 +672,30 @@ export default function ClientsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="ico">IČO</Label>
-                    <Input
-                      id="ico"
-                      value={formData.ico}
-                      onChange={(e) => setFormData({ ...formData, ico: e.target.value })}
-                      placeholder="12345678"
-                      maxLength={8}
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="ico"
+                        value={formData.ico}
+                        onChange={(e) => setFormData({ ...formData, ico: e.target.value })}
+                        placeholder="12345678"
+                        maxLength={8}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        onClick={fetchFromFinstat}
+                        disabled={loadingFinstat || !formData.ico || formData.ico.length !== 8}
+                        variant="outline"
+                        size="sm"
+                        className="border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                      >
+                        {loadingFinstat ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Building2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dic">DIČ</Label>
