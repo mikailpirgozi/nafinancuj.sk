@@ -33,8 +33,12 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import { exportApplicationsToCSV } from "@/lib/csv-export";
+import { ApplicationFormDialog } from "@/components/application-form-dialog";
+import { Plus } from "lucide-react";
 
 interface Application {
   id: string;
@@ -47,8 +51,8 @@ interface Application {
   createdAt: string;
   client: {
     companyName: string | null;
-    contactPerson: string;
-  };
+    contactPerson: string | null;
+  } | null;
 }
 
 const STATUS_COLORS = {
@@ -73,10 +77,13 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchApplications();
   }, []);
 
@@ -93,8 +100,8 @@ export default function ApplicationsPage() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (app) =>
-          app.client.companyName?.toLowerCase().includes(query) ||
-          app.client.contactPerson.toLowerCase().includes(query) ||
+          app.client?.companyName?.toLowerCase().includes(query) ||
+          app.client?.contactPerson?.toLowerCase().includes(query) ||
           app.purpose.toLowerCase().includes(query) ||
           app.id.toLowerCase().includes(query)
       );
@@ -108,8 +115,8 @@ export default function ApplicationsPage() {
       setLoading(true);
       const response = await fetch("/api/applications");
       const data = await response.json();
-      setApplications(data.applications || []);
-      setFilteredApplications(data.applications || []);
+      setApplications(data.data || []);
+      setFilteredApplications(data.data || []);
     } catch (error) {
       console.error("Error fetching applications:", error);
       toast.error("Chyba pri načítaní žiadostí");
@@ -163,12 +170,9 @@ export default function ApplicationsPage() {
     REJECTED: applications.filter((a) => a.status === "REJECTED").length,
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-900" />
-      </div>
-    );
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return null;
   }
 
   return (
@@ -213,15 +217,48 @@ export default function ApplicationsPage() {
       </header>
 
       <div className="container mx-auto py-8 px-4 max-w-7xl">
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <RefreshCw className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-slate-600 font-medium">Načítavam žiadosti...</p>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Žiadosti o úver</h2>
             <p className="text-gray-600 mt-2">CRM systém pre správu žiadostí</p>
           </div>
-          <Button onClick={fetchApplications} variant="outline" disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Obnoviť
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={fetchApplications} variant="outline" disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Obnoviť
+            </Button>
+            <Button
+              onClick={() => {
+                try {
+                  exportApplicationsToCSV(applications);
+                  toast.success(`Exportovaných ${applications.length} žiadostí do CSV`);
+                } catch {
+                  toast.error("Chyba pri exporte");
+                }
+              }}
+              variant="outline"
+              disabled={applications.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              className="bg-gradient-to-r from-blue-900 to-blue-800"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nová žiadosť
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -335,7 +372,7 @@ export default function ApplicationsPage() {
                 {filteredApplications.map((app) => (
                   <TableRow key={app.id} className="hover:bg-gray-50">
                     <TableCell className="font-semibold">
-                      {app.client.companyName || app.client.contactPerson}
+                      {app.client?.companyName || app.client?.contactPerson || "N/A"}
                     </TableCell>
                     <TableCell>{app.purpose}</TableCell>
                     <TableCell className="font-semibold">€{(app.amount / 100).toLocaleString()}</TableCell>
@@ -396,7 +433,16 @@ export default function ApplicationsPage() {
             )}
           </CardContent>
         </Card>
+        </>
+        )}
       </div>
+
+      {/* Application Form Dialog */}
+      <ApplicationFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSuccess={fetchApplications}
+      />
     </div>
   );
 }

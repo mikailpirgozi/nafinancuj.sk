@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { applications } from "@/db/schema";
+import { applications, clients } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
+
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /**
  * GET /api/applications
@@ -28,8 +32,22 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await db
-      .select()
+      .select({
+        id: applications.id,
+        clientId: applications.clientId,
+        amount: applications.amount,
+        purpose: applications.purpose,
+        status: applications.status,
+        durationMonths: applications.durationMonths,
+        assignedToUserId: applications.assignedToUserId,
+        createdAt: applications.createdAt,
+        client: {
+          companyName: clients.companyName,
+          contactPerson: clients.contactPerson,
+        },
+      })
       .from(applications)
+      .leftJoin(clients, eq(applications.clientId, clients.id))
       .where(and(...conditions))
       .orderBy(desc(applications.createdAt));
 

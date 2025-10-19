@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { LoanFormDialog } from "@/components/loan-form-dialog";
 import { toast } from "sonner";
+import { exportLoansToCSV } from "@/lib/csv-export";
+import { Download } from "lucide-react";
 
 interface Loan {
   id: string;
@@ -46,9 +48,11 @@ interface Loan {
 export default function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchLoans();
   }, []);
 
@@ -57,7 +61,7 @@ export default function LoansPage() {
       setLoading(true);
       const response = await fetch("/api/loans");
       const data = await response.json();
-      setLoans(data.loans || []);
+      setLoans(data.data || []);
     } catch (error) {
       console.error("Error fetching loans:", error);
       toast.error("Chyba pri načítaní úverov");
@@ -69,12 +73,9 @@ export default function LoansPage() {
   const totalVolume = loans.reduce((sum, loan) => sum + loan.amount, 0) / 100;
   const activeLoans = loans.filter((l) => l.status === "ACTIVE").length;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-900" />
-      </div>
-    );
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return null;
   }
 
   return (
@@ -119,6 +120,15 @@ export default function LoansPage() {
       </header>
 
       <div className="container mx-auto py-8 px-4 max-w-7xl">
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <RefreshCw className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-slate-600 font-medium">Načítavam úvery...</p>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Úvery</h2>
@@ -128,6 +138,21 @@ export default function LoansPage() {
             <Button onClick={fetchLoans} variant="outline" disabled={loading}>
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Obnoviť
+            </Button>
+            <Button
+              onClick={() => {
+                try {
+                  exportLoansToCSV(loans);
+                  toast.success(`Exportovaných ${loans.length} úverov do CSV`);
+                } catch {
+                  toast.error("Chyba pri exporte");
+                }
+              }}
+              variant="outline"
+              disabled={loans.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
             </Button>
             <Button
               onClick={() => setIsDialogOpen(true)}
@@ -249,6 +274,8 @@ export default function LoansPage() {
             )}
           </CardContent>
         </Card>
+        </>
+        )}
       </div>
 
       {/* Loan Form Dialog */}

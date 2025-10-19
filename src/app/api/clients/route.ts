@@ -5,6 +5,10 @@ import { requireOrganization } from "@/lib/auth";
 import { createClientSchema } from "@/lib/validators";
 import { eq, desc } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * GET /api/clients
  * Get all clients for the current organization

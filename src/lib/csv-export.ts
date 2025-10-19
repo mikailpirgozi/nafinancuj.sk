@@ -62,10 +62,10 @@ export function exportClientsToCSV(clients: Array<{
   phone: string | null;
   address: string | null;
   city: string | null;
-  zipCode: string | null;
-  country: string | null;
-  taxId: string | null;
-  registrationNumber: string | null;
+  postalCode: string | null;
+  ico: string | null;
+  employeesCount: number | null;
+  annualRevenue: number | null;
   createdAt: string;
 }>): void {
   const exportData = clients.map((client) => ({
@@ -76,10 +76,10 @@ export function exportClientsToCSV(clients: Array<{
     Telefón: client.phone || "",
     Adresa: client.address || "",
     Mesto: client.city || "",
-    PSČ: client.zipCode || "",
-    Krajina: client.country || "",
-    IČO: client.taxId || "",
-    "Registračné číslo": client.registrationNumber || "",
+    PSČ: client.postalCode || "",
+    IČO: client.ico || "",
+    "Počet zamestnancov": client.employeesCount || "",
+    "Ročný obrat (€)": client.annualRevenue ? (client.annualRevenue / 100).toFixed(2) : "",
     "Vytvorené": new Date(client.createdAt).toLocaleDateString("sk-SK"),
   }));
 
@@ -101,13 +101,13 @@ export function exportLoansToCSV(loans: Array<{
   status: string;
   client: {
     companyName: string | null;
-    contactPerson: string;
-  };
+    contactPerson: string | null;
+  } | null;
 }>): void {
   const exportData = loans.map((loan) => ({
     ID: loan.id,
     "Variabilný symbol": loan.variableSymbol,
-    Klient: loan.client.companyName || loan.client.contactPerson,
+    Klient: loan.client?.companyName || loan.client?.contactPerson || "N/A",
     "Suma (€)": (loan.amount / 100).toFixed(2),
     "Úrok (% p.a.)": loan.interestRateAnnual,
     "Typ úveru": loan.productType === "AMORTIZING" ? "Amortizačný" : "Úrokový",
@@ -132,12 +132,12 @@ export function exportApplicationsToCSV(applications: Array<{
   createdAt: string;
   client: {
     companyName: string | null;
-    contactPerson: string;
-  };
+    contactPerson: string | null;
+  } | null;
 }>): void {
   const exportData = applications.map((app) => ({
     ID: app.id,
-    Klient: app.client.companyName || app.client.contactPerson,
+    Klient: app.client?.companyName || app.client?.contactPerson || "N/A",
     "Suma (€)": (app.amount / 100).toFixed(2),
     Účel: app.purpose,
     Status: app.status,

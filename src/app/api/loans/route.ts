@@ -11,6 +11,10 @@ import {
 } from "@/lib/services/loan-calculator";
 import { eq, and } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * GET /api/loans
  * Get all loans for the current organization

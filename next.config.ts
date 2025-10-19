@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
       static: 0,
     },
   },
+  // Disable static optimization for error pages
+  output: "standalone",
+  // Skip static error pages generation
+  generateBuildId: async () => {
+    return "build-" + Date.now();
+  },
 };
 
 export default nextConfig;

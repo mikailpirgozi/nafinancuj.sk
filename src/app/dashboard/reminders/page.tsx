@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -31,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Edit, Send, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Edit, Send, AlertCircle, Settings, Users, FileBarChart, FileText, TrendingUp } from "lucide-react";
 
 interface ReminderPolicy {
   id: string;
@@ -182,17 +183,59 @@ Váš tím`,
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-orange-600 bg-clip-text text-transparent">
-            Politiky Upomienok
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Nastavte automatické upomienky a poplatky za omeškané splátky
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation */}
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-orange-600 bg-clip-text text-transparent">
+              Nafinancuj.sk
+            </h1>
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
+                Dashboard
+              </a>
+              <a href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
+                <Users className="inline h-4 w-4 mr-1" />
+                Klienti
+              </a>
+              <a href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
+                <FileBarChart className="inline h-4 w-4 mr-1" />
+                Úvery
+              </a>
+              <a href="/dashboard/applications" className="text-gray-600 hover:text-blue-900 transition">
+                <FileText className="inline h-4 w-4 mr-1" />
+                Žiadosti
+              </a>
+              <a href="/dashboard/reports" className="text-gray-600 hover:text-blue-900 transition">
+                <TrendingUp className="inline h-4 w-4 mr-1" />
+                Reporty
+              </a>
+              <a href="/dashboard/reminders" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
+                <AlertCircle className="inline h-4 w-4 mr-1" />
+                Upomienky
+              </a>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Nastavenia
+            </Button>
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
-        <div className="flex gap-3">
+      </header>
+
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Politiky Upomienok</h2>
+            <p className="text-gray-600 mt-2">
+              Nastavte automatické upomienky a poplatky za omeškané splátky
+            </p>
+          </div>
+          <div className="flex gap-3">
           <Button
             onClick={handleGenerateReminders}
             disabled={generating}
@@ -347,8 +390,8 @@ Váš tím`,
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
-      </div>
 
       <Card className="shadow-lg border-t-4 border-t-blue-900">
         <CardHeader>
@@ -473,6 +516,7 @@ Váš tím`,
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
