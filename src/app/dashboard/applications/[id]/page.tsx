@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,12 +71,7 @@ export default function ApplicationDetailPage() {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isCreatingLoan, setIsCreatingLoan] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    fetchApplicationData();
-  }, [applicationId]);
-
-  const fetchApplicationData = async () => {
+  const fetchApplicationData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -100,7 +95,12 @@ export default function ApplicationDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [applicationId]);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchApplicationData();
+  }, [fetchApplicationData]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) {

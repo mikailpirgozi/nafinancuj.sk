@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subMonths } from "date-fns";
-import { sk } from "date-fns/locale";
 
 interface ReportStats {
   totalLoans: number;
@@ -42,15 +41,10 @@ export default function ReportsPage() {
   const [stats, setStats] = useState<ReportStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [dateFrom, setDateFrom] = useState(format(subMonths(new Date(), 1), "yyyy-MM-dd"));
-  const [dateTo, setDateTo] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
 
-  useEffect(() => {
-    setMounted(true);
-    fetchReportData();
-  }, []);
-
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/reports/overview?from=${dateFrom}&to=${dateTo}`);
@@ -64,7 +58,21 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateFrom, dateTo]);
+
+  // Initialize dates on mount
+  useEffect(() => {
+    setMounted(true);
+    setDateFrom(format(subMonths(new Date(), 1), "yyyy-MM-dd"));
+    setDateTo(format(new Date(), "yyyy-MM-dd"));
+  }, []);
+
+  // Fetch data when dates are ready
+  useEffect(() => {
+    if (mounted && dateFrom && dateTo) {
+      fetchReportData();
+    }
+  }, [fetchReportData, mounted, dateFrom, dateTo]);
 
   const handleExportPDF = () => {
     toast.info("Export do PDF sa pripravuje...");

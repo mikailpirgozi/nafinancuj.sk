@@ -3,9 +3,65 @@ import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer
 export interface GeneratePDFParams {
   templateContent: string;
   variables: Record<string, string | number | boolean>;
-  loanData?: {
-    variableSymbol: string;
-  };
+  title?: string;
+}
+
+/**
+ * Generate PDF from template with variable replacement
+ */
+export async function generateLoanAgreementPDF(
+  params: GeneratePDFParams
+): Promise<Buffer> {
+  let content = params.templateContent;
+
+  // Replace all variables in template
+  Object.entries(params.variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, "g");
+    content = content.replace(regex, String(value));
+  });
+
+  // Split content into paragraphs for better rendering
+  const paragraphs = content.split("\n").filter((p) => p.trim());
+
+  const MyDocument = () => (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>{params.title || "Zmluva o pôžičke"}</Text>
+        </View>
+
+        {/* Content */}
+        <View style={styles.section}>
+          {paragraphs.map((paragraph, idx) => (
+            <Text key={idx} style={styles.text}>
+              {paragraph}
+            </Text>
+          ))}
+        </View>
+
+        {/* Signatures */}
+        <View style={styles.footer}>
+          <View style={styles.signatureRow}>
+            <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Podpis veriteľa</Text>
+              <Text style={styles.signatureLine}>_____________________</Text>
+            </View>
+            <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Podpis dlžníka</Text>
+              <Text style={styles.signatureLine}>_____________________</Text>
+            </View>
+          </View>
+        </View>
+      </Page>
+    </Document>
+  );
+
+  // Generate PDF
+  const blob = await pdf(<MyDocument />).toBlob();
+
+  // Convert blob to buffer
+  return Buffer.from(await blob.arrayBuffer());
 }
 
 const styles = StyleSheet.create({
@@ -17,109 +73,45 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 30,
     textAlign: "center",
-    borderBottom: "2px solid #2563eb",
-    paddingBottom: 20,
+    borderBottom: "2px solid #000",
+    paddingBottom: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#1e293b",
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: "#64748b",
-    marginTop: 5,
+    color: "#000",
   },
   section: {
-    marginBottom: 20,
-    lineHeight: 1.6,
+    marginBottom: 30,
+    flex: 1,
   },
   text: {
-    fontSize: 11,
-    lineHeight: 1.5,
-    color: "#334155",
+    fontSize: 10,
+    lineHeight: 1.6,
+    marginBottom: 8,
+    color: "#333",
     textAlign: "justify",
   },
   footer: {
     marginTop: 40,
-    borderTop: "1px solid #e2e8f0",
+    borderTop: "1px solid #ccc",
     paddingTop: 20,
+  },
+  signatureRow: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  footerSection: {
+  signatureBox: {
     width: "45%",
   },
-  footerText: {
+  signatureLabel: {
     fontSize: 10,
-    marginBottom: 30,
-    color: "#334155",
+    marginBottom: 10,
+    fontWeight: "bold",
   },
-  signature: {
-    marginTop: 50,
-    borderTop: "1px solid #000",
-    paddingTop: 5,
-    fontSize: 9,
-  },
-  pageNumber: {
-    position: "absolute",
-    bottom: 30,
-    right: 30,
-    fontSize: 10,
-    color: "#94a3b8",
+  signatureLine: {
+    borderBottom: "1px solid #000",
+    height: 20,
   },
 });
-
-export async function generateLoanAgreementPDF(
-  params: GeneratePDFParams
-): Promise<Blob> {
-  // Replace variables in template content
-  let content = params.templateContent;
-  Object.entries(params.variables).forEach(([key, value]) => {
-    const regex = new RegExp(`{{${key}}}`, "g");
-    content = content.replace(regex, String(value));
-  });
-
-  const MyDocument = () => (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.title}>ZMLUVA O PÔŽIČKE</Text>
-          <Text style={styles.subtitle}>č. {params.loanData?.variableSymbol}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.text}>{content}</Text>
-        </View>
-
-        <View style={styles.footer}>
-          <View style={styles.footerSection}>
-            <Text style={styles.footerText}>Podpis veriteľa:</Text>
-            <View style={styles.signature} />
-          </View>
-          <View style={styles.footerSection}>
-            <Text style={styles.footerText}>Podpis dlžníka:</Text>
-            <View style={styles.signature} />
-          </View>
-        </View>
-
-        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} />
-      </Page>
-    </Document>
-  );
-
-  try {
-    const blob = await pdf(<MyDocument />).toBlob();
-    return blob;
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw error;
-  }
-}
-
-export async function generatePDFBuffer(params: GeneratePDFParams): Promise<Buffer> {
-  const blob = await generateLoanAgreementPDF(params);
-  return Buffer.from(await blob.arrayBuffer());
-}

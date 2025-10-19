@@ -117,7 +117,7 @@ export async function searchCompaniesByName(
     }
 
     const data = await response.json();
-    return (data.Results || []).map((item: any) => ({
+    return (data.Results || []).map((item: { Ico: string; Name: string }) => ({
       ico: item.Ico,
       name: item.Name,
     }));

@@ -50,18 +50,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        client,
-        loans: clientLoans,
-        applications: clientApplications,
-        loansCount: clientLoans.length,
-        activeLoansCount: clientLoans.filter((l) => l.status === "ACTIVE")
-          .length,
-        applicationsCount: clientApplications.length,
-        approvedApplicationsCount: clientApplications.filter(
-          (a) => a.status === "APPROVED"
-        ).length,
-      },
+      data: client,
     });
   } catch (error) {
     console.error("Error fetching client:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +15,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import {
   AlertCircle,
   ArrowLeft,
   Mail,
-  Phone,
   MapPin,
   Building2,
   FileText,
@@ -33,6 +31,25 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
+
+// Safe date parsing utility
+const safeParseDate = (dateValue: unknown): Date | null => {
+  if (!dateValue) return null;
+  try {
+    const date = new Date(dateValue as string | number);
+    if (isNaN(date.getTime())) return null;
+    return date;
+  } catch {
+    return null;
+  }
+};
+
+// Safe date formatter
+const formatDateSafe = (dateValue: unknown, formatStr: string = "dd.MM.yyyy"): string => {
+  const date = safeParseDate(dateValue);
+  if (!date) return "N/A";
+  return format(date, formatStr, { locale: sk });
+};
 
 interface Client {
   id: string;
@@ -71,6 +88,16 @@ interface Note {
   createdBy: string;
 }
 
+interface Stats {
+  totalLoans: number;
+  activeLoans: number;
+  completedLoans: number;
+  overdueInstallments: number;
+  totalVolume: number;
+  totalPaid: number;
+  overdueAmount: number;
+}
+
 export default function ClientDetailPage() {
   const params = useParams();
   const clientId = params.id as string;
@@ -79,18 +106,13 @@ export default function ClientDetailPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    fetchClientData();
-  }, [clientId]);
-
-  const fetchClientData = async () => {
+  const fetchClientData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -132,7 +154,12 @@ export default function ClientDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clientId]);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchClientData();
+  }, [fetchClientData]);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) {
@@ -281,7 +308,7 @@ export default function ClientDetailPage() {
               )}
               <div>
                 <p className="text-sm text-slate-500">Vytvorený</p>
-                <p className="text-sm text-slate-600">{format(new Date(client.createdAt), "dd.MM.yyyy", { locale: sk })}</p>
+                <p className="text-sm text-slate-600">{formatDateSafe(client.createdAt)}</p>
               </div>
             </CardContent>
           </Card>
@@ -424,8 +451,8 @@ export default function ClientDetailPage() {
                               {loan.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{format(new Date(loan.startDate), "dd.MM.yyyy", { locale: sk })}</TableCell>
-                          <TableCell>{format(new Date(loan.endDate), "dd.MM.yyyy", { locale: sk })}</TableCell>
+                          <TableCell>{formatDateSafe(loan.startDate)}</TableCell>
+                          <TableCell>{formatDateSafe(loan.endDate)}</TableCell>
                           <TableCell>
                             <Link href={`/dashboard/loans/${loan.id}`}>
                               <Button size="sm" variant="outline" className="border-slate-200 hover:border-blue-300">
@@ -469,7 +496,7 @@ export default function ClientDetailPage() {
                     <TableBody>
                       {applications.map((app) => (
                         <TableRow key={app.id} className="border-slate-200/60 hover:bg-slate-50/60">
-                          <TableCell>{format(new Date(app.createdAt), "dd.MM.yyyy", { locale: sk })}</TableCell>
+                          <TableCell>{formatDateSafe(app.createdAt)}</TableCell>
                           <TableCell className="font-bold">€{(app.loanAmount / 100).toLocaleString()}</TableCell>
                           <TableCell>
                             <Badge className="bg-blue-100 text-blue-800">{app.status}</Badge>
@@ -561,7 +588,7 @@ export default function ClientDetailPage() {
                           <div className="flex-1">
                             <p className="text-slate-700">{note.content}</p>
                             <p className="text-xs text-slate-500 mt-2">
-                              {note.createdBy} • {format(new Date(note.createdAt), "dd.MM.yyyy HH:mm", { locale: sk })}
+                              {note.createdBy} • {formatDateSafe(note.createdAt)}
                             </p>
                           </div>
                         </div>
@@ -589,7 +616,7 @@ export default function ClientDetailPage() {
                     </div>
                     <div className="pb-8">
                       <p className="font-semibold text-slate-900">Klient vytvorený</p>
-                      <p className="text-sm text-slate-600">{format(new Date(client.createdAt), "dd.MM.yyyy HH:mm", { locale: sk })}</p>
+                      <p className="text-sm text-slate-600">{formatDateSafe(client.createdAt)}</p>
                     </div>
                   </div>
                 </div>

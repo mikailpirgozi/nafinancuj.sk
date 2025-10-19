@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,17 +19,34 @@ import { Progress } from "@/components/ui/progress";
 import {
   AlertCircle,
   ArrowLeft,
-  Calendar,
   DollarSign,
   Download,
   FileText,
   Plus,
   RefreshCw,
-  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
+
+// Safe date parsing utility
+const safeParseDate = (dateValue: unknown): Date | null => {
+  if (!dateValue) return null;
+  try {
+    const date = new Date(dateValue as string | number);
+    if (isNaN(date.getTime())) return null;
+    return date;
+  } catch {
+    return null;
+  }
+};
+
+// Safe date formatter
+const formatDateSafe = (dateValue: unknown, formatStr: string = "dd.MM.yyyy"): string => {
+  const date = safeParseDate(dateValue);
+  if (!date) return "N/A";
+  return format(date, formatStr, { locale: sk });
+};
 
 interface Loan {
   id: string;
@@ -90,12 +107,7 @@ export default function LoanDetailPage() {
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    fetchLoanData();
-  }, [loanId]);
-
-  const fetchLoanData = async () => {
+  const fetchLoanData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -108,8 +120,12 @@ export default function LoanDetailPage() {
       if (!loanRes.ok) throw new Error("Chyba pri načítaní úveru");
 
       const loanData = await loanRes.json();
-      setLoan(loanData.data);
-      setInstallments(loanData.data.installments || []);
+      // Handle nested response structure from API
+      const loanInfo = loanData.data.loan || loanData.data;
+      const loanInstallments = loanData.data.installments || [];
+      
+      setLoan(loanInfo);
+      setInstallments(loanInstallments);
 
       if (paymentsRes.ok) {
         const paymentData = await paymentsRes.json();
@@ -126,7 +142,12 @@ export default function LoanDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loanId]);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchLoanData();
+  }, [fetchLoanData]);
 
   if (!mounted || !loan) {
     return (
@@ -234,7 +255,7 @@ export default function LoanDetailPage() {
               <div>
                 <p className="text-sm text-slate-500 mb-1">Začiatok / Koniec</p>
                 <p className="text-base font-medium text-slate-900">
-                  {format(new Date(loan.startDate), "dd.MM.yyyy", { locale: sk })} - {format(new Date(loan.endDate), "dd.MM.yyyy", { locale: sk })}
+                  {formatDateSafe(loan.startDate)} - {formatDateSafe(loan.endDate)}
                 </p>
               </div>
               <div>
@@ -314,7 +335,7 @@ export default function LoanDetailPage() {
                     {installments.map((inst, idx) => (
                       <TableRow key={inst.id} className="border-slate-200/60 hover:bg-slate-50/60">
                         <TableCell className="font-medium">{idx + 1}</TableCell>
-                        <TableCell>{format(new Date(inst.dueDate), "dd.MM.yyyy", { locale: sk })}</TableCell>
+                        <TableCell>{formatDateSafe(inst.dueDate)}</TableCell>
                         <TableCell>€{(inst.principalAmount / 100).toLocaleString()}</TableCell>
                         <TableCell>€{(inst.interestAmount / 100).toLocaleString()}</TableCell>
                         <TableCell className="font-semibold">€{(inst.totalAmount / 100).toLocaleString()}</TableCell>
@@ -376,7 +397,7 @@ export default function LoanDetailPage() {
                     <TableBody>
                       {payments.map((payment) => (
                         <TableRow key={payment.id} className="border-slate-200/60 hover:bg-slate-50/60">
-                          <TableCell>{format(new Date(payment.createdAt), "dd.MM.yyyy")}</TableCell>
+                          <TableCell>{formatDateSafe(payment.createdAt)}</TableCell>
                           <TableCell className="font-semibold text-emerald-600">€{(payment.amount / 100).toLocaleString()}</TableCell>
                           <TableCell className="font-mono">{payment.variableSymbol}</TableCell>
                           <TableCell className="text-slate-600">{payment.referenceNumber || "-"}</TableCell>
@@ -483,7 +504,7 @@ export default function LoanDetailPage() {
                     </div>
                     <div className="pb-8">
                       <p className="font-semibold text-slate-900">Úver vytvorený</p>
-                      <p className="text-sm text-slate-600">{format(new Date(loan.startDate), "dd.MM.yyyy HH:mm", { locale: sk })}</p>
+                      <p className="text-sm text-slate-600">{formatDateSafe(loan.startDate, "dd.MM.yyyy HH:mm")}</p>
                     </div>
                   </div>
                 </div>

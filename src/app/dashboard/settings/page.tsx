@@ -30,7 +30,6 @@ import { toast } from "sonner";
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [showPublicKey, setShowPublicKey] = useState(false);
@@ -63,10 +62,6 @@ export default function SettingsPage() {
     smsCriticalReminders: false,
   });
 
-  const [security, setSecurity] = useState({
-    twoFactorEnabled: false,
-  });
-
   const [apiKeys, setApiKeys] = useState({
     finstatPrivate: "E18488FD1FBD4373A5456B2D4B578140",
     finstatPublic: "BEBB0DA2A8F64958A30888D853505EC8",
@@ -83,8 +78,6 @@ export default function SettingsPage() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success("Nastavenia organizácie uložené");
-    } catch (error) {
-      toast.error("Chyba pri uložení nastavení");
     } finally {
       setIsSaving(false);
     }
@@ -95,8 +88,6 @@ export default function SettingsPage() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success("Profil úspešne aktualizovaný");
-    } catch (error) {
-      toast.error("Chyba pri aktualizácii profilu");
     } finally {
       setIsSaving(false);
     }
@@ -107,8 +98,6 @@ export default function SettingsPage() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success("Notifikácie uložené");
-    } catch (error) {
-      toast.error("Chyba pri uložení notifikácií");
     } finally {
       setIsSaving(false);
     }
@@ -119,8 +108,6 @@ export default function SettingsPage() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success("API kľúče uložené");
-    } catch (error) {
-      toast.error("Chyba pri uložení API kľúčov");
     } finally {
       setIsSaving(false);
     }
@@ -419,14 +406,14 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-slate-900">Status</p>
-                    <p className="text-sm text-slate-600">Momentálne {security.twoFactorEnabled ? "zapnutá" : "vypnutá"}</p>
+                    <p className="text-sm text-slate-600">Momentálne vypnutá</p>
                   </div>
-                  <Badge className={security.twoFactorEnabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"}>
-                    {security.twoFactorEnabled ? "Zapnutá" : "Vypnutá"}
+                  <Badge className="bg-slate-100 text-slate-800">
+                    Vypnutá
                   </Badge>
                 </div>
                 <Button variant="outline" className="border-slate-200 hover:border-blue-300 w-full">
-                  {security.twoFactorEnabled ? "Vypnúť 2FA" : "Zapnúť 2FA"}
+                  Zapnúť 2FA
                 </Button>
               </CardContent>
             </Card>
