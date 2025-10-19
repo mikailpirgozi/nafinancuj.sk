@@ -103,6 +103,34 @@ export const rateLimiters = {
     maxRequests: 10,
     message: "Too many sensitive operations, please try again later",
   }),
+
+  // Reminders endpoint - 10 requests per hour (cron + manual)
+  reminders: rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 10,
+    message: "Reminders generation rate limited, please try again later",
+  }),
+
+  // Contract generation - 20 requests per hour
+  contracts: rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 20,
+    message: "Contract generation rate limited, please try again later",
+  }),
+
+  // Finstat API - 100 requests per day
+  finstat: rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    maxRequests: 100,
+    message: "Finstat API rate limited, please try again tomorrow",
+  }),
+
+  // CSV import - 30 requests per hour
+  csvImport: rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 30,
+    message: "CSV import rate limited, please try again later",
+  }),
 };
 
 /**
