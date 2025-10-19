@@ -63,36 +63,19 @@ export default function OverduePage() {
   const fetchOverdueInstallments = async () => {
     try {
       setLoading(true);
-      // Fetch all loans with their installments
-      const response = await fetch("/api/loans");
+      // Fetch all installments with their loans and clients in one query
+      const response = await fetch("/api/installments/overdue");
       const data = await response.json();
       
-      const allOverdue: OverdueInstallment[] = [];
-      
-      // For each loan, fetch installments and filter overdue ones
-      for (const loanData of data.data || []) {
-        const loanResponse = await fetch(`/api/loans/${loanData.id}`);
-        const loanDetail = await loanResponse.json();
-        
-        if (loanDetail.data?.installments) {
-          const overdue = loanDetail.data.installments
-            .filter((inst: OverdueInstallment) => inst.status === "OVERDUE")
-            .map((inst: OverdueInstallment) => ({
-              ...inst,
-              loan: {
-                ...loanData,
-                client: loanData.client,
-              },
-            }));
-          
-          allOverdue.push(...overdue);
-        }
+      if (data.success) {
+        // Sort by due date (oldest first)
+        const sorted = (data.data || []).sort((a: OverdueInstallment, b: OverdueInstallment) => 
+          new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+        );
+        setOverdueInstallments(sorted);
+      } else {
+        toast.error(data.error || "Chyba pri načítaní omeškaných splátok");
       }
-      
-      // Sort by due date (oldest first)
-      allOverdue.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      
-      setOverdueInstallments(allOverdue);
     } catch (error) {
       console.error("Error fetching overdue installments:", error);
       toast.error("Chyba pri načítaní omeškaných splátok");

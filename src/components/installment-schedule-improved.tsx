@@ -39,6 +39,12 @@ import {
 } from "@/components/ui/tooltip";
 import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle, DollarSign, Info } from "lucide-react";
 import { toast } from "sonner";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Payment {
   id: string;
@@ -437,13 +443,32 @@ export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: In
                   <Label htmlFor="date">
                     Dátum úhrady <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={paymentData.date}
-                    onChange={(e) => setPaymentData({ ...paymentData, date: e.target.value })}
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {paymentData.date ? new Date(paymentData.date).toLocaleDateString("sk-SK") : "Vyberte dátum"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={new Date(paymentData.date)}
+                        onSelect={(date) => {
+                          if (date) {
+                            const isoDate = date.toISOString().split('T')[0];
+                            setPaymentData({ ...paymentData, date: isoDate });
+                            (document.querySelector('[role="button"][class*="justify-start"]') as HTMLElement)?.click();
+                          }
+                        }}
+                        disabled={(date) => date > new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
