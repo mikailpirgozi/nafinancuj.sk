@@ -24,7 +24,8 @@ export async function GET() {
       ));
 
     // Transform data to match expected format
-    const result = overdueInstallments.map((row: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = overdueInstallments.map((row: Record<string, any>) => ({
       id: row.installments.id,
       dueDate: row.installments.dueDate,
       totalAmount: row.installments.totalAmount,

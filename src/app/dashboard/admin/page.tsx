@@ -12,19 +12,23 @@ import { toast } from "sonner";
 export default function AdminPage() {
   const { user } = useUser();
   const [mounted, setMounted] = useState(false);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<{
+    totalLoans: number;
+    totalClients: number;
+    totalApplications: number;
+    totalLoansAmount: number;
+  } | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    checkSuperAdmin();
+    const checkAdmin = () => {
+      if (user?.primaryEmailAddress?.emailAddress !== "pirgozi1@gmail.com") {
+        toast.error("Prístup zamietnutý - nie ste super admin");
+      }
+    };
+    checkAdmin();
     fetchAdminStats();
-  }, []);
-
-  const checkSuperAdmin = async () => {
-    if (user?.primaryEmailAddress?.emailAddress !== "pirgozi1@gmail.com") {
-      toast.error("Prístup zamietnutý - nie ste super admin");
-    }
-  };
+  }, [user?.primaryEmailAddress?.emailAddress]);
 
   const fetchAdminStats = async () => {
     try {
@@ -42,6 +46,7 @@ export default function AdminPage() {
         totalLoans: loans.data?.length || 0,
         totalClients: clients.data?.length || 0,
         totalApplications: apps.data?.length || 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         totalLoansAmount: (loans.data || []).reduce((sum: number, l: any) => sum + (l.amount || 0), 0),
       });
     } catch (error) {

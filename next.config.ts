@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => {
     return "build-" + Date.now();
   },
+  // Disable static export to avoid Clerk issues
+  staticPageGenerationTimeout: 0,
 };
 
 export default nextConfig;
