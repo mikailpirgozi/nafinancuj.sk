@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,313 +20,277 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, RefreshCw, Shield } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-interface CollateralFormProps {
+export interface Collateral {
+  id: string;
   loanId: string;
+  type: "REAL_ESTATE" | "VEHICLE" | "EQUIPMENT" | "INVENTORY" | "OTHER";
+  description: string;
+  estimatedValue: number;
+  notes: string;
+  documentUrls: string[];
+  createdAt: string;
+}
+
+interface CollateralFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  loanId: string;
+  collateral?: Collateral;
   onSuccess: () => void;
 }
 
-interface CollateralFormData {
-  type: "REAL_ESTATE" | "VEHICLE" | "OTHER";
-  description: string;
-  estimatedValue: string;
-  // Real Estate fields
-  address: string;
-  cadastralArea: string;
-  parcelNumber: string;
-  listOfOwnership: string;
-  // Vehicle fields
-  vin: string;
-  licensePlate: string;
-  make: string;
-  model: string;
-  year: string;
-}
+const COLLATERAL_TYPES = [
+  { value: "REAL_ESTATE", label: "Nehnuteľnosť" },
+  { value: "VEHICLE", label: "Vozidlo" },
+  { value: "EQUIPMENT", label: "Zariadenie" },
+  { value: "INVENTORY", label: "Zásoby" },
+  { value: "OTHER", label: "Iné" },
+];
 
-export function CollateralForm({ loanId, onSuccess }: CollateralFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<CollateralFormData>({
-    type: "REAL_ESTATE",
-    description: "",
-    estimatedValue: "",
-    address: "",
-    cadastralArea: "",
-    parcelNumber: "",
-    listOfOwnership: "",
-    vin: "",
-    licensePlate: "",
-    make: "",
-    model: "",
-    year: "",
-  });
+export default function CollateralFormDialog({
+  open,
+  onOpenChange,
+  loanId,
+  collateral,
+  onSuccess,
+}: CollateralFormDialogProps) {
+  const [type, setType] = useState<string>(collateral?.type || "REAL_ESTATE");
+  const [description, setDescription] = useState(collateral?.description || "");
+  const [estimatedValue, setEstimatedValue] = useState(
+    collateral?.estimatedValue ? String(collateral.estimatedValue / 100) : ""
+  );
+  const [notes, setNotes] = useState(collateral?.notes || "");
+  const [documents, setDocuments] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Build details object based on type
-      let details = {};
-      if (formData.type === "REAL_ESTATE") {
-        details = {
-          address: formData.address || undefined,
-          cadastralArea: formData.cadastralArea || undefined,
-          parcelNumber: formData.parcelNumber || undefined,
-          listOfOwnership: formData.listOfOwnership || undefined,
-        };
-      } else if (formData.type === "VEHICLE") {
-        details = {
-          vin: formData.vin || undefined,
-          licensePlate: formData.licensePlate || undefined,
-          make: formData.make || undefined,
-          model: formData.model || undefined,
-          year: formData.year ? parseInt(formData.year) : undefined,
-        };
-      }
-
-      const payload = {
-        loanId,
-        type: formData.type,
-        description: formData.description,
-        estimatedValue: Math.round(parseFloat(formData.estimatedValue) * 100), // Convert to cents
-        details,
-      };
-
-      const response = await fetch("/api/collaterals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Chyba pri pridávaní kolaterálu");
-      }
-
-      toast.success("Kolaterál úspešne pridaný!");
-      resetForm();
-      onSuccess();
-    } catch (error) {
-      console.error("Error creating collateral:", error);
-      toast.error(error instanceof Error ? error.message : "Chyba pri pridávaní kolaterálu");
-    } finally {
-      setIsSubmitting(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setDocuments([...documents, ...newFiles]);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      type: "REAL_ESTATE",
-      description: "",
-      estimatedValue: "",
-      address: "",
-      cadastralArea: "",
-      parcelNumber: "",
-      listOfOwnership: "",
-      vin: "",
-      licensePlate: "",
-      make: "",
-      model: "",
-      year: "",
-    });
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.classList.add("border-blue-500", "bg-blue-50");
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.classList.remove("border-blue-500", "bg-blue-50");
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove("border-blue-500", "bg-blue-50");
+    if (e.dataTransfer.files) {
+      const newFiles = Array.from(e.dataTransfer.files);
+      setDocuments([...documents, ...newFiles]);
+    }
+  };
+
+  const removeDocument = (index: number) => {
+    setDocuments(documents.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!type || !description || !estimatedValue) {
+      toast.error("Vyplňte všetky povinné polia");
+      return;
+    }
+
+    if (Number(estimatedValue) <= 0) {
+      toast.error("Hodnota musí byť väčšia ako 0");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("loanId", loanId);
+      formData.append("type", type);
+      formData.append("description", description);
+      formData.append("estimatedValue", String(Math.round(Number(estimatedValue) * 100)));
+      formData.append("notes", notes);
+
+      documents.forEach((doc) => {
+        formData.append("documents", doc);
+      });
+
+      const endpoint = collateral
+        ? `/api/collaterals/${collateral.id}`
+        : `/api/collaterals`;
+      const method = collateral ? "PATCH" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to save collateral");
+
+      toast.success(
+        collateral ? "Kolaterál aktualizovaný" : "Kolaterál vytvorený"
+      );
+      onOpenChange(false);
+      onSuccess();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Chyba pri ukladaní kolaterálu");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-purple-600" />
-          Pridať kolaterál
-        </CardTitle>
-        <CardDescription>Zaznamenajte zabezpečenie pre tento úver</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-6">
-            {/* Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">
-                  Typ kolaterálu <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value: "REAL_ESTATE" | "VEHICLE" | "OTHER") =>
-                    setFormData({ ...formData, type: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="REAL_ESTATE">Nehnuteľnosť</SelectItem>
-                    <SelectItem value="VEHICLE">Vozidlo</SelectItem>
-                    <SelectItem value="OTHER">Iné</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            {collateral ? "Upraviť kolaterál" : "Nový kolaterál"}
+          </DialogTitle>
+          <DialogDescription>
+            Vyplňte informácie o kolaterále pre úver
+          </DialogDescription>
+        </DialogHeader>
 
-              <div className="space-y-2">
-                <Label htmlFor="estimatedValue">
-                  Odhadovaná hodnota (€) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="estimatedValue"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.estimatedValue}
-                  onChange={(e) => setFormData({ ...formData, estimatedValue: e.target.value })}
-                  placeholder="50000.00"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">
-                Popis <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Stručný popis kolaterálu..."
-                rows={3}
-                required
-              />
-            </div>
-
-            {/* Real Estate Fields */}
-            {formData.type === "REAL_ESTATE" && (
-              <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h4 className="font-semibold text-blue-900">Detaily nehnuteľnosti</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Adresa</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="Hlavná 123, Bratislava"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cadastralArea">Katastrálne územie</Label>
-                    <Input
-                      id="cadastralArea"
-                      value={formData.cadastralArea}
-                      onChange={(e) => setFormData({ ...formData, cadastralArea: e.target.value })}
-                      placeholder="Bratislava - Staré Mesto"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="parcelNumber">Číslo parcely</Label>
-                    <Input
-                      id="parcelNumber"
-                      value={formData.parcelNumber}
-                      onChange={(e) => setFormData({ ...formData, parcelNumber: e.target.value })}
-                      placeholder="123/45"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="listOfOwnership">List vlastníctva</Label>
-                    <Input
-                      id="listOfOwnership"
-                      value={formData.listOfOwnership}
-                      onChange={(e) => setFormData({ ...formData, listOfOwnership: e.target.value })}
-                      placeholder="LV 12345"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Vehicle Fields */}
-            {formData.type === "VEHICLE" && (
-              <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
-                <h4 className="font-semibold text-purple-900">Detaily vozidla</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="make">Značka</Label>
-                    <Input
-                      id="make"
-                      value={formData.make}
-                      onChange={(e) => setFormData({ ...formData, make: e.target.value })}
-                      placeholder="BMW"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
-                    <Input
-                      id="model"
-                      value={formData.model}
-                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                      placeholder="X5"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="year">Rok výroby</Label>
-                    <Input
-                      id="year"
-                      type="number"
-                      min="1900"
-                      max={new Date().getFullYear() + 1}
-                      value={formData.year}
-                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                      placeholder="2020"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="licensePlate">EČV</Label>
-                    <Input
-                      id="licensePlate"
-                      value={formData.licensePlate}
-                      onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                      placeholder="BA123AB"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="vin">VIN</Label>
-                    <Input
-                      id="vin"
-                      value={formData.vin}
-                      onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
-                      placeholder="WBADT43452G123456"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>
-                Zrušiť
-              </Button>
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Pridávam...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Pridať kolaterál
-                  </>
-                )}
-              </Button>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Type */}
+          <div className="space-y-2">
+            <Label htmlFor="type">
+              Typ kolaterálu <span className="text-red-500">*</span>
+            </Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COLLATERAL_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">
+              Popis <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Napr. Bytovka 3+1, Bratislava..."
+              className="min-h-24"
+              required
+            />
+          </div>
+
+          {/* Estimated Value */}
+          <div className="space-y-2">
+            <Label htmlFor="value">
+              Odhadovaná hodnota (€) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="value"
+              type="number"
+              step="0.01"
+              min="0"
+              value={estimatedValue}
+              onChange={(e) => setEstimatedValue(e.target.value)}
+              placeholder="50000.00"
+              required
+            />
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Poznámky</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Dodatočné informácie o kolaterále..."
+              className="min-h-20"
+            />
+          </div>
+
+          {/* Documents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Dokumenty</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className="border-2 border-dashed border-slate-200 rounded-lg p-8 transition text-center cursor-pointer hover:border-slate-300"
+              >
+                <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+                <p className="text-sm text-slate-600 mb-2">
+                  Pretiahnite súbory sem alebo kliknite na výber
+                </p>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-input"
+                />
+                <label htmlFor="file-input">
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <span>Vybrať súbory</span>
+                  </Button>
+                </label>
+              </div>
+
+              {documents.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">
+                    Vybrané súbory ({documents.length}):
+                  </p>
+                  {documents.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-slate-50 p-2 rounded"
+                    >
+                      <span className="text-sm text-slate-700">{doc.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(idx)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Zrušiť
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {collateral ? "Uložiť zmeny" : "Vytvoriť kolaterál"}
+            </Button>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 
