@@ -447,7 +447,11 @@ export default function LoanDetailPage() {
           </TabsList>
 
           <TabsContent value="installments" className="mt-6">
-            <InstallmentSchedule installments={installments} />
+            <InstallmentSchedule 
+              installments={installments} 
+              loanId={loanId}
+              onPaymentAdded={fetchLoanData}
+            />
           </TabsContent>
 
           <TabsContent value="payments" className="mt-6">

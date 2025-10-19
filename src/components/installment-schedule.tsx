@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -10,8 +11,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle, DollarSign } from "lucide-react";
+import { toast } from "sonner";
 
 interface Installment {
   id: string;
@@ -26,6 +47,8 @@ interface Installment {
 
 interface InstallmentScheduleProps {
   installments: Installment[];
+  loanId: string;
+  onPaymentAdded?: () => void;
 }
 
 const STATUS_CONFIG = {
@@ -55,11 +78,73 @@ const STATUS_CONFIG = {
   },
 };
 
-export function InstallmentSchedule({ installments }: InstallmentScheduleProps) {
+export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: InstallmentScheduleProps) {
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    amount: "",
+    method: "BANK_TRANSFER",
+    date: new Date().toISOString().split("T")[0],
+    notes: "",
+  });
+
   const totalPrincipal = installments.reduce((sum, inst) => sum + inst.principalAmount, 0);
   const totalInterest = installments.reduce((sum, inst) => sum + inst.interestAmount, 0);
   const totalAmount = installments.reduce((sum, inst) => sum + inst.totalAmount, 0);
   const totalPaid = installments.reduce((sum, inst) => sum + inst.paidAmount, 0);
+
+  const handleOpenPaymentDialog = (installment: Installment) => {
+    setSelectedInstallment(installment);
+    const remaining = installment.totalAmount - installment.paidAmount;
+    setPaymentData({
+      amount: (remaining / 100).toFixed(2),
+      method: "BANK_TRANSFER",
+      date: new Date().toISOString().split("T")[0],
+      notes: `Platba za splátku č. ${installments.indexOf(installment) + 1}`,
+    });
+    setIsPaymentDialogOpen(true);
+  };
+
+  const handleSubmitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInstallment) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        loanId,
+        installmentId: selectedInstallment.id,
+        amount: Math.round(parseFloat(paymentData.amount) * 100),
+        method: paymentData.method,
+        paidAt: paymentData.date,
+        notes: paymentData.notes || null,
+      };
+
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Chyba pri vytváraní platby");
+      }
+
+      toast.success("Platba úspešne pridaná!");
+      setIsPaymentDialogOpen(false);
+      if (onPaymentAdded) {
+        onPaymentAdded();
+      }
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      toast.error(error instanceof Error ? error.message : "Chyba pri vytváraní platby");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
@@ -104,6 +189,7 @@ export function InstallmentSchedule({ installments }: InstallmentScheduleProps) 
                 <TableHead className="text-right">Zostáva</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-center">Akcia</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,6 +259,18 @@ export function InstallmentSchedule({ installments }: InstallmentScheduleProps) 
                         {statusConfig.label}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-center">
+                      {installment.status !== "PAID" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenPaymentDialog(installment)}
+                          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+                        >
+                          <DollarSign className="h-3 w-3 mr-1" />
+                          Uhradiť
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -187,6 +285,124 @@ export function InstallmentSchedule({ installments }: InstallmentScheduleProps) 
           </div>
         )}
       </CardContent>
+
+      {/* Quick Payment Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-emerald-600" />
+              Uhradiť splátku
+            </DialogTitle>
+            <DialogDescription>
+              {selectedInstallment && (
+                <>
+                  Splátka č. {installments.indexOf(selectedInstallment) + 1} •{" "}
+                  {new Date(selectedInstallment.dueDate).toLocaleDateString("sk-SK")}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitPayment}>
+            <div className="grid gap-4 py-4">
+              {selectedInstallment && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-blue-700">Celková suma:</p>
+                      <p className="font-semibold text-blue-900">
+                        €{(selectedInstallment.totalAmount / 100).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-blue-700">Zostáva zaplatiť:</p>
+                      <p className="font-semibold text-blue-900">
+                        €{((selectedInstallment.totalAmount - selectedInstallment.paidAmount) / 100).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="amount">
+                  Suma (€) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={paymentData.amount}
+                  onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="method">
+                  Spôsob úhrady <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={paymentData.method}
+                  onValueChange={(value) => setPaymentData({ ...paymentData, method: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BANK_TRANSFER">Bankový prevod</SelectItem>
+                    <SelectItem value="CASH">Hotovosť</SelectItem>
+                    <SelectItem value="CARD">Karta</SelectItem>
+                    <SelectItem value="OTHER">Iné</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date">
+                  Dátum úhrady <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={paymentData.date}
+                  onChange={(e) => setPaymentData({ ...paymentData, date: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Poznámka</Label>
+                <Textarea
+                  id="notes"
+                  value={paymentData.notes}
+                  onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+                  placeholder="Voliteľná poznámka k platbe..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPaymentDialogOpen(false)}
+                disabled={isSubmitting}
+              >
+                Zrušiť
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Ukladám..." : "Pridať platbu"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

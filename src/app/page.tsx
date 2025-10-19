@@ -47,17 +47,18 @@ export default async function HomePage() {
                 Uľahčite si život s odborníkmi na vašej strane. Spoľahnite sana naše skúsenosti a riešenia ktoré vám ušetria peniaze aj čas.
               </p>
               <div className="flex gap-4">
+                <Link
+                  href="/apply"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg flex items-center gap-2"
+                >
+                  <FileText className="h-5 w-5" />
+                  Podať žiadosť o úver
+                </Link>
                 <a
                   href="#kontakt"
                   className="bg-green-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-green-600 transition shadow-lg"
                 >
                   Dohodnúť konzultáciu
-                </a>
-                <a
-                  href="#sluzby"
-                  className="bg-purple-100 text-purple-700 px-8 py-4 rounded-lg font-semibold hover:bg-purple-200 transition"
-                >
-                  Napísať správu
                 </a>
               </div>
             </div>
@@ -246,12 +247,13 @@ export default async function HomePage() {
             Máte otázky ohľadom financovania, poistenia alebo daní? Sme pripravení vám pomôcť. Dohodnite si s nami konzultáciu a získajte odborné poradenstvo šité na mieru vašim potrebám.
           </p>
           <div className="flex justify-center gap-4">
-            <a
-              href="#kontakt"
-              className="bg-green-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-green-600 transition shadow-lg"
+            <Link
+              href="/apply"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg flex items-center gap-2"
             >
-              Zavolať
-            </a>
+              <FileText className="h-5 w-5" />
+              Podať žiadosť online
+            </Link>
             <a
               href="#kontakt"
               className="bg-white text-purple-900 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition"
