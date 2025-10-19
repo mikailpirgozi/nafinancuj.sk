@@ -82,6 +82,12 @@ export default function ApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [amountFrom, setAmountFrom] = useState("");
+  const [amountTo, setAmountTo] = useState("");
+  const [agentFilter, setAgentFilter] = useState<string>("ALL");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -94,6 +100,35 @@ export default function ApplicationsPage() {
     // Filter by status
     if (statusFilter !== "ALL") {
       filtered = filtered.filter((app) => app.status === statusFilter);
+    }
+
+    // Filter by agent
+    if (agentFilter !== "ALL") {
+      if (agentFilter === "UNASSIGNED") {
+        filtered = filtered.filter((app) => !app.assignedToUserId);
+      } else {
+        filtered = filtered.filter((app) => app.assignedToUserId === agentFilter);
+      }
+    }
+
+    // Filter by date range
+    if (dateFrom) {
+      filtered = filtered.filter((app) => new Date(app.createdAt) >= new Date(dateFrom));
+    }
+    if (dateTo) {
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((app) => new Date(app.createdAt) <= endDate);
+    }
+
+    // Filter by amount range
+    if (amountFrom) {
+      const minAmount = parseFloat(amountFrom) * 100;
+      filtered = filtered.filter((app) => app.amount >= minAmount);
+    }
+    if (amountTo) {
+      const maxAmount = parseFloat(amountTo) * 100;
+      filtered = filtered.filter((app) => app.amount <= maxAmount);
     }
 
     // Filter by search query
@@ -109,7 +144,7 @@ export default function ApplicationsPage() {
     }
 
     setFilteredApplications(filtered);
-  }, [searchQuery, statusFilter, applications]);
+  }, [searchQuery, statusFilter, agentFilter, dateFrom, dateTo, amountFrom, amountTo, applications]);
 
   const fetchApplications = async () => {
     try {
@@ -263,45 +298,145 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Hľadať žiadosť (klient, účel, ID)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        <Card className="mb-6 border-2 border-blue-100">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Pokročilé vyhľadávanie a filtrovanie</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
               >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+                {showFilters ? "Skryť" : "Zobraziť"} filtre
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Hľadať žiadosť (klient, účel, ID)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrovať podľa statusu" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Všetky ({statusCounts.ALL})</SelectItem>
-              <SelectItem value="NEW">Nové ({statusCounts.NEW})</SelectItem>
-              <SelectItem value="REVIEWING">V kontrole ({statusCounts.REVIEWING})</SelectItem>
-              <SelectItem value="DOCUMENTS_REQUESTED">
-                Dokumenty požadované ({statusCounts.DOCUMENTS_REQUESTED})
-              </SelectItem>
-              <SelectItem value="PENDING_APPROVAL">
-                Čaká na schválenie ({statusCounts.PENDING_APPROVAL})
-              </SelectItem>
-              <SelectItem value="APPROVED">Schválené ({statusCounts.APPROVED})</SelectItem>
-              <SelectItem value="REJECTED">Zamietnuté ({statusCounts.REJECTED})</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrovať podľa statusu" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Všetky ({statusCounts.ALL})</SelectItem>
+                  <SelectItem value="NEW">Nové ({statusCounts.NEW})</SelectItem>
+                  <SelectItem value="REVIEWING">V kontrole ({statusCounts.REVIEWING})</SelectItem>
+                  <SelectItem value="DOCUMENTS_REQUESTED">
+                    Dokumenty požadované ({statusCounts.DOCUMENTS_REQUESTED})
+                  </SelectItem>
+                  <SelectItem value="PENDING_APPROVAL">
+                    Čaká na schválenie ({statusCounts.PENDING_APPROVAL})
+                  </SelectItem>
+                  <SelectItem value="APPROVED">Schválené ({statusCounts.APPROVED})</SelectItem>
+                  <SelectItem value="REJECTED">Zamietnuté ({statusCounts.REJECTED})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Dátum od</label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Dátum do</label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Agent</label>
+                  <Select value={agentFilter} onValueChange={setAgentFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Všetci agenti" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Všetci agenti</SelectItem>
+                      <SelectItem value="UNASSIGNED">Nepriradené</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Suma od (€)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="100"
+                    placeholder="0"
+                    value={amountFrom}
+                    onChange={(e) => setAmountFrom(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Suma do (€)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="100"
+                    placeholder="100000"
+                    value={amountTo}
+                    onChange={(e) => setAmountTo(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStatusFilter("ALL");
+                      setAgentFilter("ALL");
+                      setDateFrom("");
+                      setDateTo("");
+                      setAmountFrom("");
+                      setAmountTo("");
+                      toast.success("Filtre vymazané");
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Vymazať filtre
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 text-sm text-slate-600">
+              Zobrazených <span className="font-bold text-blue-600">{filteredApplications.length}</span> z{" "}
+              <span className="font-bold">{applications.length}</span> žiadostí
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
