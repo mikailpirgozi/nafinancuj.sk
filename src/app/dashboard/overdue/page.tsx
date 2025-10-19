@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
+import {} from "@clerk/nextjs";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  Settings,
   Users,
-  FileBarChart,
-  AlertCircle,
   RefreshCw,
-  FileText,
   AlertTriangle,
   Calendar,
   DollarSign,
@@ -28,6 +24,7 @@ import {
   Mail,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DashboardHeader } from "@/components/dashboard-header";
 
 interface OverdueInstallment {
   id: string;
@@ -101,51 +98,9 @@ export default function OverduePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Top Navigation */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-orange-600 bg-clip-text text-transparent">
-              Nafinancuj.sk
-            </h1>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
-                <Users className="inline h-4 w-4 mr-1" />
-                Klienti
-              </Link>
-              <Link href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
-                <FileBarChart className="inline h-4 w-4 mr-1" />
-                Úvery
-              </Link>
-              <Link href="/dashboard/applications" className="text-gray-600 hover:text-blue-900 transition">
-                <FileText className="inline h-4 w-4 mr-1" />
-                Žiadosti
-              </Link>
-              <Link href="/dashboard/reminders" className="text-gray-600 hover:text-blue-900 transition">
-                <AlertCircle className="inline h-4 w-4 mr-1" />
-                Upomienky
-              </Link>
-              <Link href="/dashboard/overdue" className="text-red-600 font-semibold border-b-2 border-red-600 pb-1">
-                <AlertTriangle className="inline h-4 w-4 mr-1" />
-                Omeškané
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/settings">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Nastavenia
-              </Button>
-            </Link>
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </div>
-      </header>
+      <DashboardHeader currentPage="overdue" />
 
       <div className="container mx-auto py-8 px-4 max-w-7xl">
         {loading ? (

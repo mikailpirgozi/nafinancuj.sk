@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
-import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
-  Settings,
-  Users,
-  FileBarChart,
-  AlertCircle,
   RefreshCw,
   Search,
   X,
@@ -35,11 +29,12 @@ import {
   CheckCircle,
   XCircle,
   Download,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DashboardHeader } from "@/components/dashboard-header";
 import { exportApplicationsToCSV } from "@/lib/csv-export";
 import { ApplicationFormDialog } from "@/components/application-form-dialog";
-import { Plus } from "lucide-react";
 
 interface Application {
   id: string;
@@ -97,12 +92,10 @@ export default function ApplicationsPage() {
   useEffect(() => {
     let filtered = applications;
 
-    // Filter by status
     if (statusFilter !== "ALL") {
       filtered = filtered.filter((app) => app.status === statusFilter);
     }
 
-    // Filter by agent
     if (agentFilter !== "ALL") {
       if (agentFilter === "UNASSIGNED") {
         filtered = filtered.filter((app) => !app.assignedToUserId);
@@ -111,7 +104,6 @@ export default function ApplicationsPage() {
       }
     }
 
-    // Filter by date range
     if (dateFrom) {
       filtered = filtered.filter((app) => new Date(app.createdAt) >= new Date(dateFrom));
     }
@@ -121,7 +113,6 @@ export default function ApplicationsPage() {
       filtered = filtered.filter((app) => new Date(app.createdAt) <= endDate);
     }
 
-    // Filter by amount range
     if (amountFrom) {
       const minAmount = parseFloat(amountFrom) * 100;
       filtered = filtered.filter((app) => app.amount >= minAmount);
@@ -131,7 +122,6 @@ export default function ApplicationsPage() {
       filtered = filtered.filter((app) => app.amount <= maxAmount);
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -192,7 +182,7 @@ export default function ApplicationsPage() {
       case "REJECTED":
         return <XCircle className="h-4 w-4" />;
       default:
-        return <AlertCircle className="h-4 w-4" />;
+        return null;
     }
   };
 
@@ -206,53 +196,15 @@ export default function ApplicationsPage() {
     REJECTED: applications.filter((a) => a.status === "REJECTED").length,
   };
 
-  // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-orange-600 bg-clip-text text-transparent">
-              Nafinancuj.sk
-            </h1>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
-                <Users className="inline h-4 w-4 mr-1" />
-                Klienti
-              </Link>
-              <Link href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
-                <FileBarChart className="inline h-4 w-4 mr-1" />
-                Úvery
-              </Link>
-              <Link href="/dashboard/applications" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
-                <FileText className="inline h-4 w-4 mr-1" />
-                Žiadosti
-              </Link>
-              <Link href="/dashboard/reminders" className="text-gray-600 hover:text-blue-900 transition">
-                <AlertCircle className="inline h-4 w-4 mr-1" />
-                Upomienky
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Nastavenia
-            </Button>
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <DashboardHeader currentPage="applications" />
 
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <div className="container mx-auto py-8 px-6 max-w-7xl">
         {loading ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
@@ -262,322 +214,328 @@ export default function ApplicationsPage() {
           </div>
         ) : (
           <>
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">Žiadosti o úver</h2>
-            <p className="text-gray-600 mt-2">CRM systém pre správu žiadostí</p>
-          </div>
-          <div className="flex gap-3">
-            <Button onClick={fetchApplications} variant="outline" disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Obnoviť
-            </Button>
-            <Button
-              onClick={() => {
-                try {
-                  exportApplicationsToCSV(applications);
-                  toast.success(`Exportovaných ${applications.length} žiadostí do CSV`);
-                } catch {
-                  toast.error("Chyba pri exporte");
-                }
-              }}
-              variant="outline"
-              disabled={applications.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
-            <Button
-              onClick={() => setIsDialogOpen(true)}
-              className="bg-gradient-to-r from-blue-900 to-blue-800"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nová žiadosť
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6 border-2 border-blue-100">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Pokročilé vyhľadávanie a filtrovanie</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                {showFilters ? "Skryť" : "Zobraziť"} filtre
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Hľadať žiadosť (klient, účel, ID)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-4xl font-bold text-slate-900 mb-2">Žiadosti o úver</h2>
+                <p className="text-slate-600 text-lg">CRM systém pre správu žiadostí</p>
               </div>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrovať podľa statusu" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Všetky ({statusCounts.ALL})</SelectItem>
-                  <SelectItem value="NEW">Nové ({statusCounts.NEW})</SelectItem>
-                  <SelectItem value="REVIEWING">V kontrole ({statusCounts.REVIEWING})</SelectItem>
-                  <SelectItem value="DOCUMENTS_REQUESTED">
-                    Dokumenty požadované ({statusCounts.DOCUMENTS_REQUESTED})
-                  </SelectItem>
-                  <SelectItem value="PENDING_APPROVAL">
-                    Čaká na schválenie ({statusCounts.PENDING_APPROVAL})
-                  </SelectItem>
-                  <SelectItem value="APPROVED">Schválené ({statusCounts.APPROVED})</SelectItem>
-                  <SelectItem value="REJECTED">Zamietnuté ({statusCounts.REJECTED})</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-3">
+                <Button onClick={fetchApplications} variant="outline" disabled={loading} className="border-slate-200 hover:border-blue-300 hover:bg-blue-50">
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  Obnoviť
+                </Button>
+                <Button
+                  onClick={() => {
+                    try {
+                      exportApplicationsToCSV(applications);
+                      toast.success(`Exportovaných ${applications.length} žiadostí do CSV`);
+                    } catch {
+                      toast.error("Chyba pri exporte");
+                    }
+                  }}
+                  variant="outline"
+                  disabled={applications.length === 0}
+                  className="border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button
+                  onClick={() => setIsDialogOpen(true)}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nová žiadosť
+                </Button>
+              </div>
             </div>
 
-            {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Dátum od</label>
-                  <Input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                  />
+            {/* Filters */}
+            <Card className="border-0 shadow-xl mb-6">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200/60">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Pokročilé vyhľadávanie a filtrovanie</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="text-slate-600 hover:text-blue-600"
+                  >
+                    {showFilters ? "Skryť" : "Zobraziť"} filtre
+                  </Button>
                 </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder="Hľadať žiadosť (klient, účel, ID)..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 pr-10 border-slate-200"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Dátum do</label>
-                  <Input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Agent</label>
-                  <Select value={agentFilter} onValueChange={setAgentFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Všetci agenti" />
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="border-slate-200">
+                      <SelectValue placeholder="Filtrovať podľa statusu" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL">Všetci agenti</SelectItem>
-                      <SelectItem value="UNASSIGNED">Nepriradené</SelectItem>
+                      <SelectItem value="ALL">Všetky ({statusCounts.ALL})</SelectItem>
+                      <SelectItem value="NEW">Nové ({statusCounts.NEW})</SelectItem>
+                      <SelectItem value="REVIEWING">V kontrole ({statusCounts.REVIEWING})</SelectItem>
+                      <SelectItem value="DOCUMENTS_REQUESTED">
+                        Dokumenty požadované ({statusCounts.DOCUMENTS_REQUESTED})
+                      </SelectItem>
+                      <SelectItem value="PENDING_APPROVAL">
+                        Čaká na schválenie ({statusCounts.PENDING_APPROVAL})
+                      </SelectItem>
+                      <SelectItem value="APPROVED">Schválené ({statusCounts.APPROVED})</SelectItem>
+                      <SelectItem value="REJECTED">Zamietnuté ({statusCounts.REJECTED})</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Suma od (€)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="100"
-                    placeholder="0"
-                    value={amountFrom}
-                    onChange={(e) => setAmountFrom(e.target.value)}
-                  />
-                </div>
+                {showFilters && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-200/60">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Dátum od</label>
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="border-slate-200"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Suma do (€)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="100"
-                    placeholder="100000"
-                    value={amountTo}
-                    onChange={(e) => setAmountTo(e.target.value)}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Dátum do</label>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="border-slate-200"
+                      />
+                    </div>
 
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setStatusFilter("ALL");
-                      setAgentFilter("ALL");
-                      setDateFrom("");
-                      setDateTo("");
-                      setAmountFrom("");
-                      setAmountTo("");
-                      toast.success("Filtre vymazané");
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Vymazať filtre
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4 text-sm text-slate-600">
-              Zobrazených <span className="font-bold text-blue-600">{filteredApplications.length}</span> z{" "}
-              <span className="font-bold">{applications.length}</span> žiadostí
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Nové</CardTitle>
-              <FileText className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statusCounts.NEW}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">V kontrole</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statusCounts.REVIEWING}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Schválené</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statusCounts.APPROVED}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Zamietnuté</CardTitle>
-              <XCircle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statusCounts.REJECTED}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Applications Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Zoznam žiadostí</CardTitle>
-            <CardDescription>
-              {statusFilter !== "ALL"
-                ? `Zobrazených ${filteredApplications.length} z ${applications.length} žiadostí`
-                : `Celkovo ${applications.length} žiadostí`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Klient</TableHead>
-                  <TableHead>Účel</TableHead>
-                  <TableHead>Suma</TableHead>
-                  <TableHead>Trvanie</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Vytvorené</TableHead>
-                  <TableHead>Akcie</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredApplications.map((app) => (
-                  <TableRow 
-                    key={app.id} 
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => window.location.href = `/dashboard/applications/${app.id}`}
-                  >
-                    <TableCell className="font-semibold">
-                      {app.client?.companyName || app.client?.contactPerson || "N/A"}
-                    </TableCell>
-                    <TableCell>{app.purpose}</TableCell>
-                    <TableCell className="font-semibold">€{(app.amount / 100).toLocaleString()}</TableCell>
-                    <TableCell>{app.durationMonths} mesiacov</TableCell>
-                    <TableCell>
-                      <Badge className={STATUS_COLORS[app.status as keyof typeof STATUS_COLORS]}>
-                        <span className="flex items-center gap-1">
-                          {getStatusIcon(app.status)}
-                          {STATUS_LABELS[app.status as keyof typeof STATUS_LABELS]}
-                        </span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(app.createdAt).toLocaleDateString("sk-SK")}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={app.status}
-                        onValueChange={(value) => handleStatusChange(app.id, value)}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Agent</label>
+                      <Select value={agentFilter} onValueChange={setAgentFilter}>
+                        <SelectTrigger className="border-slate-200">
+                          <SelectValue placeholder="Všetci agenti" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="NEW">Nová</SelectItem>
-                          <SelectItem value="REVIEWING">V kontrole</SelectItem>
-                          <SelectItem value="DOCUMENTS_REQUESTED">Dokumenty požadované</SelectItem>
-                          <SelectItem value="PENDING_APPROVAL">Čaká na schválenie</SelectItem>
-                          <SelectItem value="APPROVED">Schválená</SelectItem>
-                          <SelectItem value="REJECTED">Zamietnutá</SelectItem>
+                          <SelectItem value="ALL">Všetci agenti</SelectItem>
+                          <SelectItem value="UNASSIGNED">Nepriradené</SelectItem>
                         </SelectContent>
                       </Select>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
 
-            {filteredApplications.length === 0 && (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Žiadne žiadosti</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchQuery || statusFilter !== "ALL"
-                    ? "Nenašli sa žiadne žiadosti pre zadané filtre"
-                    : "Zatiaľ neboli vytvorené žiadne žiadosti"}
-                </p>
-                {(searchQuery || statusFilter !== "ALL") && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setStatusFilter("ALL");
-                    }}
-                  >
-                    Vymazať filtre
-                  </Button>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Suma od (€)</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="100"
+                        placeholder="0"
+                        value={amountFrom}
+                        onChange={(e) => setAmountFrom(e.target.value)}
+                        className="border-slate-200"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Suma do (€)</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="100"
+                        placeholder="100000"
+                        value={amountTo}
+                        onChange={(e) => setAmountTo(e.target.value)}
+                        className="border-slate-200"
+                      />
+                    </div>
+
+                    <div className="flex items-end">
+                      <Button
+                        variant="outline"
+                        className="w-full border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("ALL");
+                          setAgentFilter("ALL");
+                          setDateFrom("");
+                          setDateTo("");
+                          setAmountFrom("");
+                          setAmountTo("");
+                          toast.success("Filtre vymazané");
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Vymazať filtre
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        </>
+
+                <div className="mt-4 text-sm text-slate-600">
+                  Zobrazených <span className="font-bold text-blue-600">{filteredApplications.length}</span> z{" "}
+                  <span className="font-bold">{applications.length}</span> žiadostí
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-700">Nové</CardTitle>
+                  <FileText className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">{statusCounts.NEW}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-yellow-50 to-yellow-100 hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-700">V kontrole</CardTitle>
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">{statusCounts.REVIEWING}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-green-100 hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-700">Schválené</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">{statusCounts.APPROVED}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-red-50 to-red-100 hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-700">Zamietnuté</CardTitle>
+                  <XCircle className="h-4 w-4 text-red-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">{statusCounts.REJECTED}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Applications Table */}
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="border-b border-slate-200/60">
+                <CardTitle>Zoznam žiadostí</CardTitle>
+                <CardDescription>
+                  {statusFilter !== "ALL"
+                    ? `Zobrazených ${filteredApplications.length} z ${applications.length} žiadostí`
+                    : `Celkovo ${applications.length} žiadostí`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-slate-200/60 hover:bg-transparent">
+                      <TableHead>Klient</TableHead>
+                      <TableHead>Účel</TableHead>
+                      <TableHead>Suma</TableHead>
+                      <TableHead>Trvanie</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Vytvorené</TableHead>
+                      <TableHead>Akcie</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredApplications.map((app) => (
+                      <TableRow
+                        key={app.id}
+                        className="hover:bg-slate-50/60 border-slate-200/60"
+                        onClick={() => (window.location.href = `/dashboard/applications/${app.id}`)}
+                      >
+                        <TableCell className="font-semibold text-slate-900">
+                          {app.client?.companyName || app.client?.contactPerson || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-slate-700">{app.purpose}</TableCell>
+                        <TableCell className="font-semibold text-slate-900">€{(app.amount / 100).toLocaleString()}</TableCell>
+                        <TableCell className="text-slate-700">{app.durationMonths} mesiacov</TableCell>
+                        <TableCell>
+                          <Badge className={`${STATUS_COLORS[app.status as keyof typeof STATUS_COLORS]}`}>
+                            <span className="flex items-center gap-1">
+                              {getStatusIcon(app.status)}
+                              {STATUS_LABELS[app.status as keyof typeof STATUS_LABELS]}
+                            </span>
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-slate-700">{new Date(app.createdAt).toLocaleDateString("sk-SK")}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Select
+                            value={app.status}
+                            onValueChange={(value) => handleStatusChange(app.id, value)}
+                          >
+                            <SelectTrigger className="w-[180px] border-slate-200">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="NEW">Nová</SelectItem>
+                              <SelectItem value="REVIEWING">V kontrole</SelectItem>
+                              <SelectItem value="DOCUMENTS_REQUESTED">Dokumenty požadované</SelectItem>
+                              <SelectItem value="PENDING_APPROVAL">Čaká na schválenie</SelectItem>
+                              <SelectItem value="APPROVED">Schválená</SelectItem>
+                              <SelectItem value="REJECTED">Zamietnutá</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {filteredApplications.length === 0 && (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Žiadne žiadosti</h3>
+                    <p className="text-slate-600 mb-4">
+                      {searchQuery || statusFilter !== "ALL"
+                        ? "Nenašli sa žiadne žiadosti pre zadané filtre"
+                        : "Zatiaľ neboli vytvorené žiadne žiadosti"}
+                    </p>
+                    {(searchQuery || statusFilter !== "ALL") && (
+                      <Button
+                        variant="outline"
+                        className="border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("ALL");
+                        }}
+                      >
+                        Vymazať filtre
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
 
-      {/* Application Form Dialog */}
       <ApplicationFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
@@ -586,4 +544,3 @@ export default function ApplicationsPage() {
     </div>
   );
 }
-

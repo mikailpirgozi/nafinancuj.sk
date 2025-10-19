@@ -9,7 +9,7 @@ export function LayoutWrapper({ children }: { children: ReactNode }) {
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      forceRedirectUrl="/dashboard"
+      redirectUrl="/dashboard"
       afterSignOutUrl="/"
     >
       <Providers>

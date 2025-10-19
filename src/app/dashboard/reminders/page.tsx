@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -33,7 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Edit, Send, AlertCircle, Settings, Users, FileBarChart, FileText, TrendingUp } from "lucide-react";
+import { Plus, Trash2, Edit, Send, AlertCircle } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard-header";
 
 interface ReminderPolicy {
   id: string;
@@ -52,7 +51,6 @@ export default function RemindersPage() {
   const [editingPolicy, setEditingPolicy] = useState<ReminderPolicy | null>(null);
   const [generating, setGenerating] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState({
     daysAfterDue: "7",
     reminderType: "EMAIL" as "EMAIL" | "SMS",
@@ -184,341 +182,310 @@ Váš tím`,
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-orange-600 bg-clip-text text-transparent">
-              Nafinancuj.sk
-            </h1>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
-                <Users className="inline h-4 w-4 mr-1" />
-                Klienti
-              </Link>
-              <Link href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
-                <FileBarChart className="inline h-4 w-4 mr-1" />
-                Úvery
-              </Link>
-              <Link href="/dashboard/applications" className="text-gray-600 hover:text-blue-900 transition">
-                <FileText className="inline h-4 w-4 mr-1" />
-                Žiadosti
-              </Link>
-              <Link href="/dashboard/reports" className="text-gray-600 hover:text-blue-900 transition">
-                <TrendingUp className="inline h-4 w-4 mr-1" />
-                Reporty
-              </Link>
-              <Link href="/dashboard/reminders" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
-                <AlertCircle className="inline h-4 w-4 mr-1" />
-                Upomienky
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Nastavenia
-            </Button>
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <DashboardHeader currentPage="reminders" />
 
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <div className="container mx-auto py-8 px-6 max-w-7xl">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Politiky Upomienok</h2>
-            <p className="text-gray-600 mt-2">
+            <h2 className="text-4xl font-bold text-slate-900 mb-2">Politiky Upomienok</h2>
+            <p className="text-slate-600 text-lg">
               Nastavte automatické upomienky a poplatky za omeškané splátky
             </p>
           </div>
           <div className="flex gap-3">
-          <Button
-            onClick={handleGenerateReminders}
-            disabled={generating}
-            variant="outline"
-            className="border-orange-500 text-orange-600 hover:bg-orange-50"
-          >
-            <Send className="mr-2 h-4 w-4" />
-            {generating ? "Generujem..." : "Spustiť upomienky"}
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={resetForm}
-                className="bg-gradient-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Nová politika
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-2xl">
-                  {editingPolicy ? "Upraviť politiku" : "Nová politika upomienok"}
-                </DialogTitle>
-                <DialogDescription>
-                  Nastavte pravidlá pre automatické odosielanie upomienok a účtovanie poplatkov
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-6 py-4">
-                  <div className="grid grid-cols-2 gap-4">
+            <Button
+              onClick={handleGenerateReminders}
+              disabled={generating}
+              variant="outline"
+              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {generating ? "Generujem..." : "Spustiť upomienky"}
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={resetForm}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nová politika
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl">
+                    {editingPolicy ? "Upraviť politiku" : "Nová politika upomienok"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Nastavte pravidlá pre automatické odosielanie upomienok a účtovanie poplatkov
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit}>
+                  <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="daysAfterDue">Dni po splatnosti</Label>
+                        <Input
+                          id="daysAfterDue"
+                          type="number"
+                          min="0"
+                          max="365"
+                          value={formData.daysAfterDue}
+                          onChange={(e) =>
+                            setFormData({ ...formData, daysAfterDue: e.target.value })
+                          }
+                          required
+                          className="border-slate-200"
+                        />
+                        <p className="text-xs text-slate-500">
+                          Koľko dní po splatnosti sa má upomienka odoslať
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="reminderType">Typ upomienky</Label>
+                        <Select
+                          value={formData.reminderType}
+                          onValueChange={(value: "EMAIL" | "SMS") =>
+                            setFormData({ ...formData, reminderType: value })
+                          }
+                        >
+                          <SelectTrigger className="border-slate-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EMAIL">Email</SelectItem>
+                            <SelectItem value="SMS">SMS</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="feeType">Typ poplatku</Label>
+                        <Select
+                          value={formData.feeType}
+                          onValueChange={(value: "FIXED" | "PERCENTAGE") =>
+                            setFormData({ ...formData, feeType: value })
+                          }
+                        >
+                          <SelectTrigger className="border-slate-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FIXED">Fixná suma (€)</SelectItem>
+                            <SelectItem value="PERCENTAGE">Percento (%)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="feeAmount">
+                          Výška poplatku {formData.feeType === "FIXED" ? "(€)" : "(%)"}
+                        </Label>
+                        <Input
+                          id="feeAmount"
+                          type="text"
+                          pattern="^\d+(\.\d{1,2})?$"
+                          value={formData.feeAmount}
+                          onChange={(e) =>
+                            setFormData({ ...formData, feeAmount: e.target.value })
+                          }
+                          placeholder="10.00"
+                          required
+                          className="border-slate-200"
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="daysAfterDue">Dni po splatnosti</Label>
-                      <Input
-                        id="daysAfterDue"
-                        type="number"
-                        min="0"
-                        max="365"
-                        value={formData.daysAfterDue}
+                      <Label htmlFor="messageTemplate">Šablóna správy</Label>
+                      <Textarea
+                        id="messageTemplate"
+                        value={formData.messageTemplate}
                         onChange={(e) =>
-                          setFormData({ ...formData, daysAfterDue: e.target.value })
+                          setFormData({ ...formData, messageTemplate: e.target.value })
                         }
+                        placeholder={defaultTemplates[formData.reminderType]}
+                        rows={8}
                         required
+                        className="font-mono text-sm border-slate-200"
                       />
-                      <p className="text-xs text-gray-500">
-                        Koľko dní po splatnosti sa má upomienka odoslať
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="reminderType">Typ upomienky</Label>
-                      <Select
-                        value={formData.reminderType}
-                        onValueChange={(value: "EMAIL" | "SMS") =>
-                          setFormData({ ...formData, reminderType: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="EMAIL">Email</SelectItem>
-                          <SelectItem value="SMS">SMS</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="feeType">Typ poplatku</Label>
-                      <Select
-                        value={formData.feeType}
-                        onValueChange={(value: "FIXED" | "PERCENTAGE") =>
-                          setFormData({ ...formData, feeType: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="FIXED">Fixná suma (€)</SelectItem>
-                          <SelectItem value="PERCENTAGE">Percento (%)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="feeAmount">
-                        Výška poplatku {formData.feeType === "FIXED" ? "(€)" : "(%)"}
-                      </Label>
-                      <Input
-                        id="feeAmount"
-                        type="text"
-                        pattern="^\d+(\.\d{1,2})?$"
-                        value={formData.feeAmount}
-                        onChange={(e) =>
-                          setFormData({ ...formData, feeAmount: e.target.value })
-                        }
-                        placeholder="10.00"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="messageTemplate">Šablóna správy</Label>
-                    <Textarea
-                      id="messageTemplate"
-                      value={formData.messageTemplate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, messageTemplate: e.target.value })
-                      }
-                      placeholder={defaultTemplates[formData.reminderType]}
-                      rows={8}
-                      required
-                      className="font-mono text-sm"
-                    />
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-blue-900 mb-2">
-                        Dostupné premenné:
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-blue-800">
-                        <code>{"{{client_name}}"}</code>
-                        <code>{"{{loan_amount}}"}</code>
-                        <code>{"{{installment_amount}}"}</code>
-                        <code>{"{{due_date}}"}</code>
-                        <code>{"{{fee_amount}}"}</code>
-                        <code>{"{{variable_symbol}}"}</code>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-blue-900 mb-2">
+                          Dostupné premenné:
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-blue-800">
+                          <code>{"{{client_name}}"}</code>
+                          <code>{"{{loan_amount}}"}</code>
+                          <code>{"{{installment_amount}}"}</code>
+                          <code>{"{{due_date}}"}</code>
+                          <code>{"{{fee_amount}}"}</code>
+                          <code>{"{{variable_symbol}}"}</code>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsDialogOpen(false);
-                      resetForm();
-                    }}
-                  >
-                    Zrušiť
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-gradient-to-r from-blue-900 to-blue-800"
-                  >
-                    {editingPolicy ? "Uložiť zmeny" : "Vytvoriť politiku"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                        resetForm();
+                      }}
+                      className="border-slate-200"
+                    >
+                      Zrušiť
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    >
+                      {editingPolicy ? "Uložiť zmeny" : "Vytvoriť politiku"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
-      <Card className="shadow-lg border-t-4 border-t-blue-900">
-        <CardHeader>
-          <CardTitle>Aktívne politiky</CardTitle>
-          <CardDescription>
-            Zoznam všetkých nastavených politík pre automatické upomienky
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Načítavam...</div>
-          ) : policies.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Žiadne politiky
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Zatiaľ nemáte vytvorené žiadne politiky upomienok
-              </p>
-              <Button
-                onClick={() => setIsDialogOpen(true)}
-                variant="outline"
-                className="border-blue-900 text-blue-900"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Vytvoriť prvú politiku
-              </Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Dni po splatnosti</TableHead>
-                  <TableHead>Typ</TableHead>
-                  <TableHead>Poplatok</TableHead>
-                  <TableHead>Šablóna správy</TableHead>
-                  <TableHead className="text-right">Akcie</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {policies.map((policy) => (
-                  <TableRow key={policy.id}>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className="bg-orange-50 text-orange-700 border-orange-300"
-                      >
-                        {policy.daysAfterDue} dní
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={policy.reminderType === "EMAIL" ? "default" : "secondary"}
-                      >
-                        {policy.reminderType === "EMAIL" ? "📧 Email" : "📱 SMS"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-semibold">
-                        {policy.feeType === "FIXED"
-                          ? `€${policy.feeAmount}`
-                          : `${policy.feeAmount}%`}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate text-sm text-gray-600">
-                        {policy.messageTemplate}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(policy)}
-                          className="hover:bg-blue-50 hover:text-blue-900"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(policy.id)}
-                          className="hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+        <Card className="border-0 shadow-xl mb-6">
+          <CardHeader className="border-b border-slate-200/60">
+            <CardTitle>Aktívne politiky</CardTitle>
+            <CardDescription>
+              Zoznam všetkých nastavených politík pre automatické upomienky
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {loading ? (
+              <div className="text-center py-8">Načítavam...</div>
+            ) : policies.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  Žiadne politiky
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  Zatiaľ nemáte vytvorené žiadne politiky upomienok
+                </p>
+                <Button
+                  onClick={() => {
+                    resetForm();
+                    setIsDialogOpen(true);
+                  }}
+                  variant="outline"
+                  className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Vytvoriť prvú politiku
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-200/60 hover:bg-transparent">
+                    <TableHead>Dni po splatnosti</TableHead>
+                    <TableHead>Typ</TableHead>
+                    <TableHead>Poplatok</TableHead>
+                    <TableHead>Šablóna správy</TableHead>
+                    <TableHead className="text-right">Akcie</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {policies.map((policy) => (
+                    <TableRow key={policy.id} className="border-slate-200/60 hover:bg-slate-50/60">
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="bg-orange-50 text-orange-700 border-orange-300"
+                        >
+                          {policy.daysAfterDue} dní
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={policy.reminderType === "EMAIL" ? "default" : "secondary"}
+                          className={
+                            policy.reminderType === "EMAIL"
+                              ? "bg-blue-100 text-blue-800 border-blue-300"
+                              : "bg-slate-100 text-slate-800 border-slate-300"
+                          }
+                        >
+                          {policy.reminderType === "EMAIL" ? "📧 Email" : "📱 SMS"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-semibold text-slate-900">
+                          {policy.feeType === "FIXED"
+                            ? `€${policy.feeAmount}`
+                            : `${policy.feeAmount}%`}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate text-sm text-slate-600">
+                          {policy.messageTemplate}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(policy)}
+                            className="hover:bg-blue-50 hover:text-blue-600 text-slate-600"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(policy.id)}
+                            className="hover:bg-red-50 hover:text-red-600 text-slate-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card className="mt-6 border-l-4 border-l-orange-500">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-orange-500" />
-            Ako fungujú upomienky?
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-gray-600">
-          <p>
-            <strong>1. Automatické spúšťanie:</strong> Každý deň o 6:00 ráno systém automaticky
-            kontroluje omeškané splátky a odošle upomienky podľa nastavených politík.
-          </p>
-          <p>
-            <strong>2. Poplatky:</strong> Ak je nastavený poplatok, automaticky sa pripočíta k
-            celkovej sume splátky.
-          </p>
-          <p>
-            <strong>3. Manuálne spustenie:</strong> Môžete kedykoľvek spustiť generovanie
-            upomienok manuálne tlačidlom &ldquo;Spustiť upomienky&rdquo;.
-          </p>
-          <p>
-            <strong>4. Viacero politík:</strong> Môžete vytvoriť viacero politík (napr. 7 dní =
-            email, 14 dní = SMS, 30 dní = email s vyšším poplatkom).
-          </p>
-        </CardContent>
-      </Card>
+        <Card className="border-0 shadow-xl border-l-4 border-l-orange-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              Ako fungujú upomienky?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-slate-600">
+            <p>
+              <strong>1. Automatické spúšťanie:</strong> Každý deň o 6:00 ráno systém automaticky
+              kontroluje omeškané splátky a odošle upomienky podľa nastavených politík.
+            </p>
+            <p>
+              <strong>2. Poplatky:</strong> Ak je nastavený poplatok, automaticky sa pripočíta k
+              celkovej sume splátky.
+            </p>
+            <p>
+              <strong>3. Manuálne spustenie:</strong> Môžete kedykoľvek spustiť generovanie
+              upomienok manuálne tlačidlom &ldquo;Spustiť upomienky&rdquo;.
+            </p>
+            <p>
+              <strong>4. Viacero politík:</strong> Môžete vytvoriť viacero politík (napr. 7 dní =
+              email, 14 dní = SMS, 30 dní = email s vyšším poplatkom).
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
-

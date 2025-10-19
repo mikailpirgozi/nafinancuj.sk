@@ -162,10 +162,10 @@ async function seed() {
     }
     console.log(`✅ Created ${usersCreated} new users (${demoUsers.length} total)`);
 
-    // 3. Create 30 demo clients
-    console.log("Creating 30 demo clients...");
+    // 3. Create 50 demo clients (expanded from 30)
+    console.log("Creating 50 demo clients...");
     const demoClients = [];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
       const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
       const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
       const ico = String(10000000 + i).padStart(8, "0");
@@ -178,39 +178,39 @@ async function seed() {
         foundedAt: randomDate(new Date(2010, 0, 1), new Date(2022, 11, 31))
           .toISOString()
           .split("T")[0],
-        employeesCount: Math.floor(Math.random() * 50) + 1,
-        annualRevenue: randomAmount(50000, 2000000),
+        employeesCount: Math.floor(Math.random() * 100) + 1,
+        annualRevenue: randomAmount(50000, 5000000),
         contactPerson: `${firstName} ${lastName}`,
         email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${companyNames[i % companyNames.length]
           .toLowerCase()
           .replace(/\s+/g, "")
-          .replace("s.r.o.", "")}.sk`,
+          .replace("s.r.o.", "")}-${i}.sk`,
         phone: `+42190${String(1000000 + i).substring(0, 7)}`,
         address: `Hlavná ${i + 1}, ${81000 + (i % 10)} Bratislava`,
-        city: i % 3 === 0 ? "Bratislava" : i % 3 === 1 ? "Košice" : "Žilina",
-        postalCode: String(81000 + (i % 100)),
+        city: i % 4 === 0 ? "Bratislava" : i % 4 === 1 ? "Košice" : i % 4 === 2 ? "Žilina" : "Banská Bystrica",
+        postalCode: String(80000 + (i % 1000)),
       });
     }
 
     const createdClients = await db.insert(clients).values(demoClients).returning();
     console.log(`✅ Created ${createdClients.length} clients`);
 
-    // 4. Create 25 applications (žiadosti)
-    console.log("Creating 25 applications...");
+    // 4. Create 50 applications (žiadosti) - expanded from 25
+    console.log("Creating 50 applications...");
     const statuses = ["NEW", "REVIEWING", "DOCUMENTS_REQUESTED", "PENDING_APPROVAL", "APPROVED", "REJECTED"];
     const demoApplications = [];
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 50; i++) {
       const client = createdClients[i % createdClients.length];
       const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const assignedTo = i % 2 === 0 ? "demo-agent-001" : "demo-agent-002";
+      const assignedTo = i % 3 === 0 ? "demo-agent-001" : i % 3 === 1 ? "demo-agent-002" : "demo-agent-003";
 
       demoApplications.push({
         organizationId: org.id,
         clientId: client.id,
-        amount: randomAmount(5000, 50000),
-        purpose: i % 3 === 0 ? "Nákup zariadenia" : i % 3 === 1 ? "Prevádzkový kapitál" : "Rozšírenie podnikania",
-        durationMonths: [6, 12, 18, 24, 36][Math.floor(Math.random() * 5)],
+        amount: randomAmount(5000, 100000),
+        purpose: i % 4 === 0 ? "Nákup zariadenia" : i % 4 === 1 ? "Prevádzkový kapitál" : i % 4 === 2 ? "Rozšírenie podnikania" : "Refinancovanie",
+        durationMonths: [6, 12, 18, 24, 36, 48][Math.floor(Math.random() * 6)],
         status: status as "NEW" | "REVIEWING" | "DOCUMENTS_REQUESTED" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED",
         assignedToUserId: status !== "NEW" ? assignedTo : null,
       });
@@ -219,24 +219,24 @@ async function seed() {
     const createdApplications = await db.insert(applications).values(demoApplications).returning();
     console.log(`✅ Created ${createdApplications.length} applications`);
 
-    // 5. Create 20 loans
-    console.log("Creating 20 loans...");
+    // 5. Create 40 loans (expanded from 20)
+    console.log("Creating 40 loans...");
     const now = new Date();
     const demoLoans = [];
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
       const client = createdClients[i % createdClients.length];
-      const startDate = randomDate(new Date(2023, 0, 1), new Date(2024, 11, 31));
-      const durationMonths = [6, 12, 18, 24, 36][Math.floor(Math.random() * 5)];
+      const startDate = randomDate(new Date(2022, 0, 1), new Date(2024, 11, 31));
+      const durationMonths = [6, 12, 18, 24, 36, 48][Math.floor(Math.random() * 6)];
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + durationMonths);
 
-      const amount = randomAmount(5000, 50000);
-      const interestRate = (8 + Math.random() * 10).toFixed(2);
+      const amount = randomAmount(5000, 100000);
+      const interestRate = (6 + Math.random() * 14).toFixed(2);
       const monthlyRate = (parseFloat(interestRate) / 12).toFixed(2);
 
       const isActive = startDate < now && endDate > now;
-      const isLate = isActive && Math.random() > 0.7;
+      const isLate = isActive && Math.random() > 0.75;
 
       demoLoans.push({
         organizationId: org.id,
@@ -244,12 +244,12 @@ async function seed() {
         amount,
         interestRateAnnual: interestRate,
         interestRateMonthly: monthlyRate,
-        productType: i % 3 === 0 ? ("INTEREST_ONLY" as const) : ("AMORTIZING" as const),
+        productType: i % 2 === 0 ? ("INTEREST_ONLY" as const) : ("AMORTIZING" as const),
         durationMonths,
         startDate: startDate.toISOString().split("T")[0],
         endDate: endDate.toISOString().split("T")[0],
         status: isLate ? ("LATE" as const) : isActive ? ("ACTIVE" as const) : ("CLOSED" as const),
-        variableSymbol: `2025${String(i + 1).padStart(3, "0")}`,
+        variableSymbol: `2025${String(i + 1).padStart(4, "0")}`,
         disbursedAt: startDate,
       });
     }
@@ -324,25 +324,34 @@ async function seed() {
     const createdPayments = await db.insert(payments).values(demoPayments).returning();
     console.log(`✅ Created ${createdPayments.length} payments`);
 
-    // 8. Create collaterals
+    // 8. Create collaterals (expanded from 15 to 40)
     console.log("Creating collaterals...");
     const collateralTypes = ["VEHICLE", "REAL_ESTATE", "OTHER"];
     const demoCollaterals = [];
 
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 40; i++) {
       const loan = createdLoans[i % createdLoans.length];
       const type = collateralTypes[Math.floor(Math.random() * collateralTypes.length)];
+
+      let description = "";
+      if (type === "VEHICLE") {
+        const brands = ["Škoda", "Volkswagen", "BMW", "Audi", "Mercedes"];
+        const models = ["Octavia", "Golf", "Passat", "Fabia", "Superb", "Roomster"];
+        const years = [2018, 2019, 2020, 2021, 2022, 2023, 2024];
+        description = `${brands[Math.floor(Math.random() * brands.length)]} ${models[Math.floor(Math.random() * models.length)]} ${years[Math.floor(Math.random() * years.length)]}`;
+      } else if (type === "REAL_ESTATE") {
+        const types = ["Byt 1+1", "Byt 2+1", "Byt 3+1", "Byt 4+1", "Rodinný dom"];
+        description = `${types[Math.floor(Math.random() * types.length)]}, Bratislava, ${80000 + i}`;
+      } else {
+        const others = ["Záväzky", "Cenné papiere", "Depozit", "Výrobné zariadenie"];
+        description = others[Math.floor(Math.random() * others.length)];
+      }
 
       demoCollaterals.push({
         loanId: loan.id,
         type: type as "VEHICLE" | "REAL_ESTATE" | "OTHER",
-        description:
-          type === "VEHICLE"
-            ? "Škoda Octavia 2020"
-            : type === "REAL_ESTATE"
-            ? "Byt 3+1, Bratislava"
-            : "Výrobné zariadenie",
-        estimatedValue: randomAmount(10000, 100000),
+        description,
+        estimatedValue: randomAmount(10000, 200000),
       });
     }
 
@@ -465,14 +474,15 @@ IČO: {{client_ico}}</p>
     const createdTemplates = await db.insert(contractTemplates).values(demoTemplates).returning();
     console.log(`✅ Created ${createdTemplates.length} contract templates`);
 
-    // 12. Create documents
+    // 12. Create documents (expanded from 30 to 60)
     console.log("Creating documents...");
     const documentCategories = ["APPRAISAL", "BANK_STATEMENT", "ID_CARD", "CONTRACT", "OTHER"];
     const demoDocuments = [];
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       const loan = createdLoans[i % createdLoans.length];
       const category = documentCategories[Math.floor(Math.random() * documentCategories.length)];
+      const daysSinceUpload = Math.floor(Math.random() * 365);
 
       demoDocuments.push({
         organizationId: org.id,
@@ -482,6 +492,7 @@ IČO: {{client_ico}}</p>
         fileName: `${category.toLowerCase()}_${loan.variableSymbol}_${i}.pdf`,
         fileUrl: `https://storage.supabase.co/documents/${org.id}/${loan.id}/${category.toLowerCase()}_${i}.pdf`,
         uploadedBy: "demo-admin-001",
+        uploadedAt: new Date(new Date().getTime() - daysSinceUpload * 24 * 60 * 60 * 1000),
       });
     }
 
@@ -526,6 +537,13 @@ IČO: {{client_ico}}</p>
     console.log("  Agent 1: agent1@demo.com");
     console.log("  Agent 2: agent2@demo.com");
     console.log("  Agent 3: agent3@demo.com");
+    console.log("\n📈 Enhanced test data includes:");
+    console.log("  - 50 clients with varied company profiles");
+    console.log("  - 50 applications with all statuses");
+    console.log("  - 40 loans (active, closed, late)");
+    console.log("  - Multiple collateral types (vehicles, real estate, machinery)");
+    console.log("  - Diverse documents for compliance testing");
+    console.log("  - Reminder policies for automation testing");
   } catch (error) {
     console.error("❌ Seed failed:", error);
     throw error;

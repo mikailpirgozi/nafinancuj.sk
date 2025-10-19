@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Users, FileBarChart, AlertCircle, Database, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { DashboardHeader } from "@/components/dashboard-header";
 
 export default function AdminPage() {
   const { user } = useUser();
@@ -76,13 +77,8 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-blue-900">Nafinancuj.sk - Super Admin</h1>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <DashboardHeader currentPage="dashboard" />
 
       <div className="container mx-auto py-8 px-4 max-w-6xl">
         <div className="mb-8">
