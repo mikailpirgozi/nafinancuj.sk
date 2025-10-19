@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -192,29 +193,29 @@ Váš tím`,
               Nafinancuj.sk
             </h1>
             <nav className="hidden md:flex items-center gap-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
+              <Link href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
                 Dashboard
-              </a>
-              <a href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
                 <Users className="inline h-4 w-4 mr-1" />
                 Klienti
-              </a>
-              <a href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
                 <FileBarChart className="inline h-4 w-4 mr-1" />
                 Úvery
-              </a>
-              <a href="/dashboard/applications" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/applications" className="text-gray-600 hover:text-blue-900 transition">
                 <FileText className="inline h-4 w-4 mr-1" />
                 Žiadosti
-              </a>
-              <a href="/dashboard/reports" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/reports" className="text-gray-600 hover:text-blue-900 transition">
                 <TrendingUp className="inline h-4 w-4 mr-1" />
                 Reporty
-              </a>
-              <a href="/dashboard/reminders" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
+              </Link>
+              <Link href="/dashboard/reminders" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
                 <AlertCircle className="inline h-4 w-4 mr-1" />
                 Upomienky
-              </a>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">

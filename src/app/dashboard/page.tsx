@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -273,29 +274,29 @@ export default function MainDashboard() {
                 </h1>
               </div>
               <nav className="hidden md:flex items-center gap-2">
-                <a href="/dashboard" className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:scale-105">
+                <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:scale-105">
                   Dashboard
-                </a>
-                <a href="/dashboard/clients" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/clients" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <Users className="inline h-4 w-4 mr-2" />
                   Klienti
-                </a>
-                <a href="/dashboard/loans" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/loans" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <FileBarChart className="inline h-4 w-4 mr-2" />
                   Úvery
-                </a>
-                <a href="/dashboard/applications" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/applications" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <FileText className="inline h-4 w-4 mr-2" />
                   Žiadosti
-                </a>
-                <a href="/dashboard/reports" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/reports" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <TrendingUp className="inline h-4 w-4 mr-2" />
                   Reporty
-                </a>
-                <a href="/dashboard/reminders" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/reminders" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <AlertCircle className="inline h-4 w-4 mr-2" />
                   Upomienky
-                </a>
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-4">
@@ -520,7 +521,11 @@ export default function MainDashboard() {
               {data?.recentLoans.map((loan) => {
                 const clientName = loan.client?.companyName || loan.client?.contactPerson || "Neznámy klient";
                 return (
-                  <TableRow key={loan.id} className="hover:bg-blue-50/50 transition-colors">
+                  <TableRow 
+                    key={loan.id} 
+                    className="hover:bg-blue-50/50 transition-colors cursor-pointer"
+                    onClick={() => window.location.href = `/dashboard/loans/${loan.id}`}
+                  >
                     <TableCell className="font-mono font-semibold">{loan.variableSymbol}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">

@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Building2, Users, TrendingUp, Download, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import * as XLSX from "xlsx";
@@ -82,6 +83,24 @@ export default function SuperAdminDashboard() {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleOrganizationStatus = async (orgId: string, currentStatus: boolean) => {
+    try {
+      const res = await fetch(`/api/organizations/${orgId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (res.ok) {
+        await fetchData();
+      } else {
+        console.error("Failed to update organization status");
+      }
+    } catch (error) {
+      console.error("Error updating organization status:", error);
     }
   };
 
@@ -258,6 +277,7 @@ export default function SuperAdminDashboard() {
                   <TableHead>Úvery</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Vytvorené</TableHead>
+                  <TableHead>Akcie</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -279,6 +299,17 @@ export default function SuperAdminDashboard() {
                     </TableCell>
                     <TableCell>
                       {new Date(org.createdAt).toLocaleDateString("sk-SK")}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={org.isActive}
+                          onCheckedChange={() => toggleOrganizationStatus(org.id, org.isActive)}
+                        />
+                        <span className="text-sm text-gray-600">
+                          {org.isActive ? "Aktívna" : "Neaktívna"}
+                        </span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

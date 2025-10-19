@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -185,25 +186,25 @@ export default function ApplicationsPage() {
               Nafinancuj.sk
             </h1>
             <nav className="hidden md:flex items-center gap-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
+              <Link href="/dashboard" className="text-gray-600 hover:text-blue-900 transition">
                 Dashboard
-              </a>
-              <a href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/clients" className="text-gray-600 hover:text-blue-900 transition">
                 <Users className="inline h-4 w-4 mr-1" />
                 Klienti
-              </a>
-              <a href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/loans" className="text-gray-600 hover:text-blue-900 transition">
                 <FileBarChart className="inline h-4 w-4 mr-1" />
                 Úvery
-              </a>
-              <a href="/dashboard/applications" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
+              </Link>
+              <Link href="/dashboard/applications" className="text-blue-900 font-semibold border-b-2 border-blue-900 pb-1">
                 <FileText className="inline h-4 w-4 mr-1" />
                 Žiadosti
-              </a>
-              <a href="/dashboard/reminders" className="text-gray-600 hover:text-blue-900 transition">
+              </Link>
+              <Link href="/dashboard/reminders" className="text-gray-600 hover:text-blue-900 transition">
                 <AlertCircle className="inline h-4 w-4 mr-1" />
                 Upomienky
-              </a>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
@@ -370,7 +371,11 @@ export default function ApplicationsPage() {
               </TableHeader>
               <TableBody>
                 {filteredApplications.map((app) => (
-                  <TableRow key={app.id} className="hover:bg-gray-50">
+                  <TableRow 
+                    key={app.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => window.location.href = `/dashboard/applications/${app.id}`}
+                  >
                     <TableCell className="font-semibold">
                       {app.client?.companyName || app.client?.contactPerson || "N/A"}
                     </TableCell>

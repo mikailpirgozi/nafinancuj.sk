@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -233,29 +234,29 @@ export default function ClientsPage() {
                 </h1>
               </div>
               <nav className="hidden md:flex items-center gap-2">
-                <a href="/dashboard" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                <Link href="/dashboard" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   Dashboard
-                </a>
-                <a href="/dashboard/clients" className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:scale-105">
+                </Link>
+                <Link href="/dashboard/clients" className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:scale-105">
                   <Users className="inline h-4 w-4 mr-2" />
                   Klienti
-                </a>
-                <a href="/dashboard/loans" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/loans" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <FileBarChart className="inline h-4 w-4 mr-2" />
                   Úvery
-                </a>
-                <a href="/dashboard/applications" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/applications" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <FileText className="inline h-4 w-4 mr-2" />
                   Žiadosti
-                </a>
-                <a href="/dashboard/reports" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/reports" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <TrendingUp className="inline h-4 w-4 mr-2" />
                   Reporty
-                </a>
-                <a href="/dashboard/reminders" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
+                </Link>
+                <Link href="/dashboard/reminders" className="px-4 py-2 rounded-lg text-slate-600 hover:bg-white/60 hover:text-blue-600 transition-all">
                   <AlertCircle className="inline h-4 w-4 mr-2" />
                   Upomienky
-                </a>
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-4">
@@ -431,7 +432,11 @@ export default function ClientsPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredClients.map((client) => (
-                      <TableRow key={client.id} className="hover:bg-blue-50/50 transition-colors cursor-pointer">
+                      <TableRow 
+                        key={client.id} 
+                        className="hover:bg-blue-50/50 transition-colors cursor-pointer"
+                        onClick={() => window.location.href = `/dashboard/clients/${client.id}`}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
