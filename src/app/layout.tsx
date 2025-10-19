@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { Providers } from "@/components/providers";
+import { LayoutWrapper } from "./_layout-wrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,12 +20,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="sk">
-        <body className={`${inter.variable} font-sans antialiased`}>
-          <Providers>{children}</Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="sk" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <LayoutWrapper>{children}</LayoutWrapper>
+      </body>
+    </html>
   );
 }

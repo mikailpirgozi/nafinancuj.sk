@@ -10,12 +10,9 @@ const nextConfig: NextConfig = {
   },
   // Disable static optimization for error pages
   output: "standalone",
-  // Skip static error pages generation
-  generateBuildId: async () => {
-    return "build-" + Date.now();
-  },
-  // Disable static export to avoid Clerk issues
+  // Disable static page generation entirely
   staticPageGenerationTimeout: 0,
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

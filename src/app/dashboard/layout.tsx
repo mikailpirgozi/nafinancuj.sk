@@ -1,12 +1,17 @@
-// Force dynamic rendering for all dashboard pages - no caching
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+"use client";
+
+import { Providers } from "@/components/providers";
+import { ReactNode } from "react";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <Providers>
+      {children}
+    </Providers>
+  );
 }
 
