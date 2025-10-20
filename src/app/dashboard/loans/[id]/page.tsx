@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
+import { InstallmentSchedule } from "@/components/installment-schedule-improved";
 
 // Safe date parsing utility
 const safeParseDate = (dateValue: unknown): Date | null => {
@@ -322,52 +323,11 @@ export default function LoanDetailPage() {
 
           {/* Tab 1: Installments */}
           <TabsContent value="installments" className="mt-6">
-            <Card className="border-0 shadow-xl">
-              <CardHeader className="border-b border-slate-200/60">
-                <CardTitle>Splátkový kalendár</CardTitle>
-                <CardDescription>Všetky splátky úveru</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-slate-200/60 hover:bg-transparent">
-                      <TableHead>#</TableHead>
-                      <TableHead>Splatnosť</TableHead>
-                      <TableHead>Istina</TableHead>
-                      <TableHead>Úrok</TableHead>
-                      <TableHead>Celkom</TableHead>
-                      <TableHead>Zaplatené</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {installments.map((inst, idx) => (
-                      <TableRow key={inst.id} className="border-slate-200/60 hover:bg-slate-50/60">
-                        <TableCell className="font-medium">{idx + 1}</TableCell>
-                        <TableCell>{formatDateSafe(inst.dueDate)}</TableCell>
-                        <TableCell>€{(inst.principalAmount / 100).toLocaleString()}</TableCell>
-                        <TableCell>€{(inst.interestAmount / 100).toLocaleString()}</TableCell>
-                        <TableCell className="font-semibold">€{(inst.totalAmount / 100).toLocaleString()}</TableCell>
-                        <TableCell>€{(inst.paidAmount / 100).toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge className={
-                            inst.status === "PAID"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : inst.status === "PARTIALLY_PAID"
-                              ? "bg-amber-100 text-amber-800"
-                              : inst.status === "OVERDUE"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-slate-100 text-slate-800"
-                          }>
-                            {inst.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <InstallmentSchedule 
+              installments={installments} 
+              loanId={loanId}
+              onPaymentAdded={fetchLoanData}
+            />
           </TabsContent>
 
           {/* Tab 2: Payments */}

@@ -37,7 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle, DollarSign, Info } from "lucide-react";
+import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle, DollarSign, Info, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -54,6 +54,22 @@ interface Payment {
   notes: string | null;
 }
 
+interface ReminderPolicy {
+  id: string;
+  daysAfterDue: number;
+  reminderType: string;
+  feeType: string;
+  feeAmount: string;
+  messageTemplate: string;
+}
+
+interface Reminder {
+  id: string;
+  sentAt: string;
+  feeCharged: number;
+  policy: ReminderPolicy;
+}
+
 interface Installment {
   id: string;
   dueDate: string;
@@ -64,6 +80,7 @@ interface Installment {
   status: string;
   paidAt: string | null;
   payments?: Payment[];
+  reminders?: Reminder[];
 }
 
 interface InstallmentScheduleProps {
@@ -236,6 +253,7 @@ export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: In
                   <TableHead className="text-right">Zostáva</TableHead>
                   <TableHead className="min-w-[100px]">Status</TableHead>
                   <TableHead className="min-w-[200px]">Platby</TableHead>
+                  <TableHead className="min-w-[150px]">Upomienky</TableHead>
                   <TableHead className="text-center">Akcia</TableHead>
                 </TableRow>
               </TableHeader>
@@ -328,6 +346,57 @@ export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: In
                                     {payment.notes && (
                                       <div className="text-slate-600 italic mt-1">{payment.notes}</div>
                                     )}
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-sm text-slate-400">—</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {installment.reminders && installment.reminders.length > 0 ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 text-sm">
+                                <Bell className="h-4 w-4 text-orange-500" />
+                                <span className="font-medium text-orange-700">
+                                  {installment.reminders.length}× upomienka
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-sm">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b">
+                                  <span className="text-xs font-semibold text-slate-700">Celkové poplatky:</span>
+                                  <span className="text-sm font-bold text-orange-600">
+                                    €{(installment.reminders.reduce((sum, r) => sum + r.feeCharged, 0) / 100).toLocaleString()}
+                                  </span>
+                                </div>
+                                {installment.reminders.map((reminder) => (
+                                  <div key={reminder.id} className="text-xs border-b pb-2 last:border-0">
+                                    <div className="flex justify-between items-start mb-1">
+                                      <div className="flex items-center gap-1">
+                                        <Bell className="h-3 w-3 text-orange-500" />
+                                        <span className="font-semibold text-slate-900">
+                                          {reminder.policy.daysAfterDue} dní po splatnosti
+                                        </span>
+                                      </div>
+                                      <Badge className="bg-orange-100 text-orange-800 text-xs">
+                                        {reminder.policy.reminderType}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-slate-600 mt-1">
+                                      Odoslané: {new Date(reminder.sentAt).toLocaleDateString("sk-SK")} {new Date(reminder.sentAt).toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" })}
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2 bg-orange-50 p-1.5 rounded">
+                                      <span className="text-slate-600">Poplatok:</span>
+                                      <span className="font-bold text-orange-700">
+                                        €{(reminder.feeCharged / 100).toLocaleString()}
+                                      </span>
+                                    </div>
                                   </div>
                                 ))}
                               </div>

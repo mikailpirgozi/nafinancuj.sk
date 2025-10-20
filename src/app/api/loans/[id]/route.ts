@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { loans, installments, payments } from "@/db/schema";
+import { loans, installments, payments, reminders } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
@@ -45,18 +45,28 @@ export async function GET(
       .where(eq(installments.loanId, id))
       .orderBy(installments.dueDate);
 
-    // Get payments for each installment
+    // Get payments and reminders for each installment
     const installmentsWithPayments = await Promise.all(
       loanInstallments.map(async (installment) => {
-        const installmentPayments = await db
-          .select()
-          .from(payments)
-          .where(eq(payments.installmentId, installment.id))
-          .orderBy(payments.paidAt);
+        const [installmentPayments, installmentReminders] = await Promise.all([
+          db
+            .select()
+            .from(payments)
+            .where(eq(payments.installmentId, installment.id))
+            .orderBy(payments.paidAt),
+          db.query.reminders.findMany({
+            where: eq(reminders.installmentId, installment.id),
+            with: {
+              policy: true,
+            },
+            orderBy: (reminders, { asc }) => [asc(reminders.sentAt)],
+          }),
+        ]);
 
         return {
           ...installment,
           payments: installmentPayments,
+          reminders: installmentReminders,
         };
       })
     );

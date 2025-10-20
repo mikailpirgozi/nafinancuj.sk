@@ -143,6 +143,11 @@ export default function OverduePage() {
   }
 
   const filteredInstallments = installments.filter((inst) => {
+    // Safety check: skip if missing required data
+    if (!inst || !inst.client || !inst.loan) {
+      return false;
+    }
+
     if (daysFilter !== "all") {
       const [minDays, maxDays] = daysFilter.split("-").map(Number);
       if (inst.daysOverdue < minDays || (maxDays && inst.daysOverdue > maxDays)) {
