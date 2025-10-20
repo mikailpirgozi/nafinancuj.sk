@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -322,16 +321,14 @@ export function ReminderPolicyDialog({
 
           <div className="space-y-2">
             <Label>Náhľad správy</Label>
-            <Card className="bg-slate-50">
-              <CardContent className="pt-6">
-                <div className="bg-white p-4 rounded border border-slate-200 text-sm whitespace-pre-wrap font-mono text-slate-700">
-                  {previewMessage}
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  (Toto je náhľad s demo dátami)
-                </p>
-              </CardContent>
-            </Card>
+            <div className="bg-slate-50">
+              <div className="bg-white p-4 rounded border border-slate-200 text-sm whitespace-pre-wrap font-mono text-slate-700">
+                {previewMessage}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                (Toto je náhľad s demo dátami)
+              </p>
+            </div>
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2">

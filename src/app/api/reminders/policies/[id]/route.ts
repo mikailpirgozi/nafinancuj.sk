@@ -6,7 +6,8 @@ import { reminderPolicyUpdateSchema } from "@/lib/validators/reminder-policy";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-async function verifyOwnership(policyId: string, organizationId: string) {
+async function verifyOwnership(policyId: string, organizationId: string | null | undefined) {
+  if (!organizationId) return null;
   const policy = await db
     .select()
     .from(reminderPolicies)
@@ -21,7 +22,7 @@ async function verifyOwnership(policyId: string, organizationId: string) {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -32,10 +33,11 @@ export async function GET(
       );
     }
 
+    const { id } = await context.params;
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.clerkId, userId))
+      .where(eq(users.id, userId))
       .limit(1)
       .then(rows => rows[0]);
 
@@ -46,7 +48,7 @@ export async function GET(
       );
     }
 
-    const policy = await verifyOwnership(params.id, user.organizationId);
+    const policy = await verifyOwnership(id, user.organizationId);
     if (!policy) {
       return NextResponse.json(
         { error: "Policy not found or unauthorized" },
@@ -66,7 +68,7 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -77,10 +79,11 @@ export async function PATCH(
       );
     }
 
+    const { id } = await context.params;
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.clerkId, userId))
+      .where(eq(users.id, userId))
       .limit(1)
       .then(rows => rows[0]);
 
@@ -91,7 +94,7 @@ export async function PATCH(
       );
     }
 
-    const policy = await verifyOwnership(params.id, user.organizationId);
+    const policy = await verifyOwnership(id, user.organizationId);
     if (!policy) {
       return NextResponse.json(
         { error: "Policy not found or unauthorized" },
@@ -115,7 +118,7 @@ export async function PATCH(
         ...validation.data,
         updatedAt: new Date(),
       })
-      .where(eq(reminderPolicies.id, params.id))
+      .where(eq(reminderPolicies.id, id))
       .returning();
 
     return NextResponse.json({ data: updatedPolicy[0] });
@@ -130,7 +133,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -141,10 +144,11 @@ export async function DELETE(
       );
     }
 
+    const { id } = await context.params;
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.clerkId, userId))
+      .where(eq(users.id, userId))
       .limit(1)
       .then(rows => rows[0]);
 
@@ -155,7 +159,7 @@ export async function DELETE(
       );
     }
 
-    const policy = await verifyOwnership(params.id, user.organizationId);
+    const policy = await verifyOwnership(id, user.organizationId);
     if (!policy) {
       return NextResponse.json(
         { error: "Policy not found or unauthorized" },
@@ -165,7 +169,7 @@ export async function DELETE(
 
     await db
       .delete(reminderPolicies)
-      .where(eq(reminderPolicies.id, params.id));
+      .where(eq(reminderPolicies.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

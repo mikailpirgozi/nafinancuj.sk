@@ -1,9 +1,9 @@
 import { getCompanyByICO } from "@/lib/services/finstat-api";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, { params }: { params: { ico: string } }) {
+export async function GET(_req: NextRequest, context: { params: Promise<{ ico: string }> }) {
   try {
-    const { ico } = params;
+    const { ico } = await context.params;
 
     // Validate ICO format
     if (!ico || !/^\d{8}$/.test(ico)) {

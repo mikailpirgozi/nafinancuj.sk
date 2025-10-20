@@ -27,7 +27,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Download,
-  Plus,
   RefreshCw,
   Upload,
   DollarSign,

@@ -1,11 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { contractTemplates, organizations } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { contractTemplates } from "@/db/schema";
+import { type User } from "@/db/schema";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { contractTemplateCreateSchema } from "@/lib/validators/contract-template";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -15,8 +17,8 @@ export async function GET(req: NextRequest) {
     // Get user's organization
     const user = await db
       .select()
-      .from("users")
-      .where(eq("users.clerkId", userId))
+      .from(users)
+      .where(eq(users.id, userId))
       .limit(1)
       .execute();
 
@@ -24,7 +26,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const organizationId = (user[0] as any).organizationId;
+    const userData = user[0] as Pick<User, 'organizationId'>;
+    const organizationId = userData.organizationId;
+
+    if (!organizationId) {
+      return NextResponse.json({ error: "User has no organization" }, { status: 400 });
+    }
 
     // Fetch templates
     const templates = await db
@@ -58,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: validation.error.errors },
+        { error: "Validation failed", details: validation.error.flatten() },
         { status: 400 }
       );
     }
@@ -66,8 +73,8 @@ export async function POST(req: NextRequest) {
     // Get user's organization
     const user = await db
       .select()
-      .from("users")
-      .where(eq("users.clerkId", userId))
+      .from(users)
+      .where(eq(users.id, userId))
       .limit(1)
       .execute();
 
@@ -75,7 +82,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const organizationId = (user[0] as any).organizationId;
+    const userData = user[0] as Pick<User, 'organizationId'>;
+    const organizationId = userData.organizationId;
+
+    if (!organizationId) {
+      return NextResponse.json({ error: "User has no organization" }, { status: 400 });
+    }
 
     // Create template
     const result = await db

@@ -65,7 +65,6 @@ export default function CollateralFormDialog({
   );
   const [notes, setNotes] = useState(collateral?.notes || "");
   const [documents, setDocuments] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

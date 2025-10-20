@@ -7,7 +7,7 @@ import { reminderPolicies } from "@/db/schema/reminder-policies";
 import { reminders } from "@/db/schema/reminders";
 import { users } from "@/db/schema/users";
 import { sendReminderNotification } from "@/lib/services/notification-service";
-import { eq, and, lt, not, inArray } from "drizzle-orm";
+import { eq, and, lt, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 interface ReminderDetail {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       const user = await db
         .select()
         .from(users)
-        .where(eq(users.clerkId, userId))
+        .where(eq(users.id, userId))
         .limit(1)
         .then(rows => rows[0]);
 
@@ -57,6 +57,18 @@ export async function POST(request: Request) {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayString = today.toISOString().split('T')[0];
+
+    // Build where conditions
+    const whereConditions = [
+      lt(installments.dueDate, todayString),
+      inArray(installments.status, ["UNPAID", "PARTIALLY_PAID"]),
+    ];
+    
+    // Add organization filter only if organizationId is set (user auth, not cron)
+    if (organizationId) {
+      whereConditions.push(eq(loans.organizationId, organizationId));
+    }
 
     // Get all overdue installments
     const overdueInstallments = await db
@@ -64,13 +76,7 @@ export async function POST(request: Request) {
       .from(installments)
       .leftJoin(loans, eq(installments.loanId, loans.id))
       .leftJoin(clients, eq(loans.clientId, clients.id))
-      .where(
-        and(
-          lt(installments.dueDate, today),
-          inArray(installments.status, ["UNPAID", "PARTIALLY_PAID"]),
-          organizationId ? eq(loans.organizationId, organizationId) : undefined
-        )
-      );
+      .where(and(...whereConditions));
 
     const processedInstallments = new Set<string>();
     const detailedResults: ReminderDetail[] = [];

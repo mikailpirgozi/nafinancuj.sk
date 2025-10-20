@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { loans, applications, payments, installments } from "@/db/schema";
+import { loans, applications, installments } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { eq, and, gte, lte } from "drizzle-orm";
 
@@ -60,17 +60,6 @@ export async function GET(request: NextRequest) {
     const totalLoans = allLoans.length;
     const totalVolume = allLoans.reduce((sum, loan) => sum + loan.amount, 0);
     
-    // Get all installments
-    const allInstallments = await db
-      .select()
-      .from(installments)
-      .where(
-        eq(
-          installments.loanId,
-          allLoans.length > 0 ? allLoans[0].id : ""
-        )
-      );
-
     // Calculate paid amount and overdue
     let totalPaid = 0;
     let overdueMoney = 0;

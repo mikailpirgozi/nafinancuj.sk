@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { contractTemplates, loans, documents } from "@/db/schema";
+import { contractTemplates, loans, documents, users } from "@/db/schema";
+import { type Loan, type User } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { contractGenerateSchema } from "@/lib/validators/contract-template";
 import { generateLoanAgreementPDF } from "@/lib/services/pdf-generator";
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: validation.error.errors },
+        { error: "Validation failed", details: validation.error.flatten() },
         { status: 400 }
       );
     }
@@ -27,8 +28,8 @@ export async function POST(req: NextRequest) {
     // Get user's organization
     const user = await db
       .select()
-      .from("users")
-      .where(eq("users.clerkId", userId))
+      .from(users)
+      .where(eq(users.id, userId))
       .limit(1)
       .execute();
 
@@ -36,7 +37,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const organizationId = (user[0] as any).organizationId;
+    const userData = user[0] as Pick<User, 'organizationId'>;
+    const organizationId = userData.organizationId;
+
+    if (!organizationId) {
+      return NextResponse.json({ error: "User has no organization" }, { status: 400 });
+    }
 
     // Fetch template
     const template = await db
@@ -67,7 +73,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Loan not found" }, { status: 404 });
     }
 
-    const loanData = loan[0] as any;
+    const loanData = loan[0] as Loan;
 
     // Prepare variables for PDF generation
     const pdfVariables = {
@@ -122,15 +128,13 @@ export async function POST(req: NextRequest) {
     const documentResult = await db
       .insert(documents)
       .values({
-        loanId: validation.data.loanId,
         organizationId,
-        name: `Contract - ${template[0].name}`,
-        type: "contract",
-        fileSize: pdfBlob.size,
-        storagePath: fileName,
-        downloadUrl: publicData.publicUrl,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        entityType: "LOAN" as const,
+        entityId: validation.data.loanId,
+        category: "CONTRACT" as const,
+        fileName: `Contract - ${template[0].name}`,
+        fileUrl: publicData.publicUrl,
+        uploadedBy: userId,
       })
       .returning();
 

@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Shield, Users, FileBarChart, AlertCircle, Database, RefreshCw, TrendingUp, Building2 } from "lucide-react";
+import { Shield, Users, Database, RefreshCw, TrendingUp, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/dashboard-header";
 

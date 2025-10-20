@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { clients, loans, applications } from "@/db/schema";
+import { clients } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { updateClientSchema } from "@/lib/validators";
 import { eq, and } from "drizzle-orm";
@@ -35,18 +35,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         { status: 404 }
       );
     }
-
-    // Get client's loans
-    const clientLoans = await db
-      .select()
-      .from(loans)
-      .where(eq(loans.clientId, id));
-
-    // Get client's applications
-    const clientApplications = await db
-      .select()
-      .from(applications)
-      .where(eq(applications.clientId, id));
 
     return NextResponse.json({
       success: true,

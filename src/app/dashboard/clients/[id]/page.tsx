@@ -204,6 +204,9 @@ export default function ClientDetailPage() {
   const activeLoans = stats?.activeLoans || 0;
   const completedLoans = stats?.completedLoans || 0;
   const overdueInstallments = stats?.overdueInstallments || 0;
+  const totalVolume = stats?.totalVolume || 0;
+  const totalPaid = stats?.totalPaid || 0;
+  const overdueAmount = stats?.overdueAmount || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -324,15 +327,15 @@ export default function ClientDetailPage() {
             <CardContent className="pt-6 space-y-3">
               <div>
                 <p className="text-sm text-slate-500">Celkový objem</p>
-                <p className="text-2xl font-bold text-slate-900">€{(stats?.totalVolume / 100 || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900">€{(totalVolume / 100).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500">Celkové splátky</p>
-                <p className="text-lg font-semibold text-emerald-600">€{(stats?.totalPaid / 100 || 0).toLocaleString()}</p>
+                <p className="text-lg font-semibold text-emerald-600">€{(totalPaid / 100).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500">Omeškané</p>
-                <p className="text-lg font-semibold text-red-600">€{(stats?.overdueAmount / 100 || 0).toLocaleString()}</p>
+                <p className="text-lg font-semibold text-red-600">€{(overdueAmount / 100).toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>

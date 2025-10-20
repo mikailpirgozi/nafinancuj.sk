@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { contractTemplates } from "@/db/schema";
+import { type User } from "@/db/schema";
+import { users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { contractTemplateUpdateSchema } from "@/lib/validators/contract-template";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,8 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
 async function verifyOwnership(templateId: string, userId: string) {
   const user = await db
     .select()
-    .from("users")
-    .where(eq("users.clerkId", userId))
+    .from(users)
+    .where(eq(users.id, userId))
     .limit(1)
     .execute();
 
@@ -17,7 +19,12 @@ async function verifyOwnership(templateId: string, userId: string) {
     return null;
   }
 
-  const organizationId = (user[0] as any).organizationId;
+  const userData = user[0] as Pick<User, 'organizationId'>;
+  const organizationId = userData.organizationId;
+
+  if (!organizationId) {
+    return null;
+  }
 
   const template = await db
     .select()
@@ -29,14 +36,15 @@ async function verifyOwnership(templateId: string, userId: string) {
   return template.length > 0 ? template[0] : null;
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const template = await verifyOwnership(params.id, userId);
+    const { id } = await context.params;
+    const template = await verifyOwnership(id, userId);
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
@@ -51,14 +59,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const template = await verifyOwnership(params.id, userId);
+    const { id } = await context.params;
+    const template = await verifyOwnership(id, userId);
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
@@ -68,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: validation.error.errors },
+        { error: "Validation failed", details: validation.error.flatten() },
         { status: 400 }
       );
     }
@@ -79,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         ...validation.data,
         updatedAt: new Date(),
       })
-      .where(eq(contractTemplates.id, params.id))
+      .where(eq(contractTemplates.id, id))
       .returning();
 
     return NextResponse.json({
@@ -92,19 +101,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const template = await verifyOwnership(params.id, userId);
+    const { id } = await context.params;
+    const template = await verifyOwnership(id, userId);
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
-    await db.delete(contractTemplates).where(eq(contractTemplates.id, params.id));
+    await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
 
     return NextResponse.json({
       success: true,
