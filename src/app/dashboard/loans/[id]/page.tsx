@@ -208,9 +208,13 @@ export default function LoanDetailPage() {
             <CardContent className="pt-6 space-y-4">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Klient</p>
-                <Link href={`/dashboard/clients/${loan.client.id}`} className="text-base font-semibold text-blue-600 hover:underline">
-                  {clientName}
-                </Link>
+                {loan.client ? (
+                  <Link href={`/dashboard/clients/${loan.client.id}`} className="text-base font-semibold text-blue-600 hover:underline">
+                    {clientName}
+                  </Link>
+                ) : (
+                  <p className="text-base font-semibold text-slate-900">{clientName}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">Typ produktu</p>

@@ -20,9 +20,12 @@ export async function GET(
     const { organizationId } = await requireOrganization();
     const { id } = await context.params;
 
-    // Get loan
+    // Get loan with client relation
     const loan = await db.query.loans.findFirst({
       where: and(eq(loans.id, id), eq(loans.organizationId, organizationId)),
+      with: {
+        client: true,
+      },
     });
 
     if (!loan) {
