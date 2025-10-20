@@ -40,10 +40,31 @@ interface Payment {
   id: string;
   createdAt: string;
   amount: number;
-  variableSymbol: string;
-  referenceNumber: string | null;
-  status: string;
-  loanId?: string | null;
+  paymentMethod: string;
+  paidAt: string;
+  notes: string | null;
+  loanId: string;
+  installmentId: string | null;
+  loan: {
+    id: string;
+    variableSymbol: string;
+    amount: number;
+    status: string;
+  };
+  client: {
+    id: string;
+    companyName: string | null;
+    contactPerson: string;
+    email: string | null;
+    phone: string | null;
+  };
+  installment: {
+    id: string;
+    dueDate: string;
+    totalAmount: number;
+    paidAmount: number;
+    status: string;
+  } | null;
 }
 
 export default function PaymentsPage() {
@@ -57,6 +78,7 @@ export default function PaymentsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [vsFilter, setVsFilter] = useState("");
+  const [clientFilter, setClientFilter] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -122,13 +144,15 @@ export default function PaymentsPage() {
 
   const handleExportCSV = () => {
     const csv = [
-      ["Dátum", "Suma", "VS", "Referencia", "Status"],
+      ["Dátum", "Klient", "VS", "Suma", "Metóda", "Splátka", "Poznámka"],
       ...filteredPayments.map((p) => [
-        format(new Date(p.createdAt), "dd.MM.yyyy"),
+        format(new Date(p.paidAt), "dd.MM.yyyy"),
+        p.client.companyName || p.client.contactPerson,
+        p.loan.variableSymbol,
         (p.amount / 100).toFixed(2),
-        p.variableSymbol,
-        p.referenceNumber || "-",
-        p.status,
+        p.paymentMethod,
+        p.installment ? format(new Date(p.installment.dueDate), "dd.MM.yyyy") : "-",
+        p.notes || "-",
       ]),
     ]
       .map((row) => row.map((cell) => `"${cell}"`).join(","))
@@ -145,17 +169,21 @@ export default function PaymentsPage() {
   if (!mounted) return null;
 
   const filteredPayments = payments.filter((p) => {
-    if (dateFrom && new Date(p.createdAt) < new Date(dateFrom)) return false;
-    if (dateTo && new Date(p.createdAt) > new Date(dateTo)) return false;
-    if (vsFilter && !p.variableSymbol.includes(vsFilter)) return false;
+    if (dateFrom && new Date(p.paidAt) < new Date(dateFrom)) return false;
+    if (dateTo && new Date(p.paidAt) > new Date(dateTo)) return false;
+    if (vsFilter && !p.loan.variableSymbol.includes(vsFilter)) return false;
+    if (clientFilter) {
+      const clientName = (p.client.companyName || p.client.contactPerson).toLowerCase();
+      if (!clientName.includes(clientFilter.toLowerCase())) return false;
+    }
     return true;
   });
 
-  const unmatchedPayments = filteredPayments.filter((p) => p.status === "UNMATCHED");
+  const unmatchedPayments = filteredPayments.filter((p) => !p.installmentId);
   const totalAmount = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
   const thisMonthAmount = filteredPayments
     .filter((p) => {
-      const date = new Date(p.createdAt);
+      const date = new Date(p.paidAt);
       const now = new Date();
       return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
     })
@@ -255,18 +283,22 @@ export default function PaymentsPage() {
         {/* Filters */}
         <Card className="border-0 shadow-xl mb-8">
           <CardContent className="pt-6">
-            <div className="flex gap-4 flex-wrap">
-              <div className="flex-1 min-w-[150px]">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
                 <label className="text-sm font-medium text-slate-700 mb-2 block">Od</label>
                 <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border-slate-200" />
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div>
                 <label className="text-sm font-medium text-slate-700 mb-2 block">Do</label>
                 <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border-slate-200" />
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div>
                 <label className="text-sm font-medium text-slate-700 mb-2 block">VS</label>
                 <Input placeholder="Hľadať VS..." value={vsFilter} onChange={(e) => setVsFilter(e.target.value)} className="border-slate-200" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Klient</label>
+                <Input placeholder="Hľadať klienta..." value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="border-slate-200" />
               </div>
             </div>
           </CardContent>
@@ -301,36 +333,74 @@ export default function PaymentsPage() {
                     <TableHeader>
                       <TableRow className="border-slate-200/60 hover:bg-transparent">
                         <TableHead>Dátum</TableHead>
-                        <TableHead>Suma</TableHead>
+                        <TableHead>Klient</TableHead>
                         <TableHead>VS</TableHead>
-                        <TableHead>Referencia</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Suma</TableHead>
+                        <TableHead>Metóda</TableHead>
+                        <TableHead>Splátka</TableHead>
+                        <TableHead>Poznámka</TableHead>
                         <TableHead>Akcie</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredPayments.map((payment) => (
-                        <TableRow key={payment.id} className="border-slate-200/60 hover:bg-slate-50/60">
-                          <TableCell>{format(new Date(payment.createdAt), "dd.MM.yyyy", { locale: sk })}</TableCell>
-                          <TableCell className="font-bold text-emerald-600">€{(payment.amount / 100).toLocaleString()}</TableCell>
-                          <TableCell className="font-mono">{payment.variableSymbol}</TableCell>
-                          <TableCell className="text-slate-600">{payment.referenceNumber || "-"}</TableCell>
-                          <TableCell>
-                            <Badge className={payment.status === "MATCHED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
-                              {payment.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {payment.loanId && (
-                              <Link href={`/dashboard/loans/${payment.loanId}`}>
+                      {filteredPayments.map((payment) => {
+                        const clientName = payment.client.companyName || payment.client.contactPerson;
+                        return (
+                          <TableRow key={payment.id} className="border-slate-200/60 hover:bg-slate-50/60">
+                            <TableCell>{format(new Date(payment.paidAt), "dd.MM.yyyy", { locale: sk })}</TableCell>
+                            <TableCell>
+                              <Link href={`/dashboard/clients/${payment.client.id}`} className="text-blue-600 hover:underline font-medium">
+                                {clientName}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              <Link href={`/dashboard/loans/${payment.loan.id}`} className="text-blue-600 hover:underline">
+                                {payment.loan.variableSymbol}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-bold text-emerald-600">€{(payment.amount / 100).toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-slate-100">
+                                {payment.paymentMethod === "BANK_TRANSFER" && "Prevod"}
+                                {payment.paymentMethod === "CASH" && "Hotovosť"}
+                                {payment.paymentMethod === "CARD" && "Karta"}
+                                {payment.paymentMethod === "OTHER" && "Iné"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {payment.installment ? (
+                                <div className="text-sm">
+                                  <div className="font-medium">{format(new Date(payment.installment.dueDate), "dd.MM.yyyy", { locale: sk })}</div>
+                                  <div className="text-xs text-slate-500">
+                                    {payment.installment.status === "PAID" && "✓ Zaplatené"}
+                                    {payment.installment.status === "PARTIALLY_PAID" && "⚠ Čiastočne"}
+                                    {payment.installment.status === "UNPAID" && "○ Nezaplatené"}
+                                    {payment.installment.status === "OVERDUE" && "⚠ Omeškané"}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-sm">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="max-w-[200px]">
+                              {payment.notes ? (
+                                <span className="text-sm text-slate-600 truncate block" title={payment.notes}>
+                                  {payment.notes}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-sm">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Link href={`/dashboard/loans/${payment.loan.id}`}>
                                 <Button size="sm" variant="outline" className="border-slate-200 hover:border-blue-300">
-                                  Detail
+                                  Detail úveru
                                 </Button>
                               </Link>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -356,26 +426,58 @@ export default function PaymentsPage() {
                     <TableHeader>
                       <TableRow className="border-slate-200/60 hover:bg-transparent">
                         <TableHead>Dátum</TableHead>
-                        <TableHead>Suma</TableHead>
+                        <TableHead>Klient</TableHead>
                         <TableHead>VS</TableHead>
-                        <TableHead>Referencia</TableHead>
+                        <TableHead>Suma</TableHead>
+                        <TableHead>Metóda</TableHead>
+                        <TableHead>Poznámka</TableHead>
                         <TableHead>Akcie</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {unmatchedPayments.map((payment) => (
-                        <TableRow key={payment.id} className="border-slate-200/60 hover:bg-slate-50/60">
-                          <TableCell>{format(new Date(payment.createdAt), "dd.MM.yyyy", { locale: sk })}</TableCell>
-                          <TableCell className="font-bold text-amber-600">€{(payment.amount / 100).toLocaleString()}</TableCell>
-                          <TableCell className="font-mono">{payment.variableSymbol}</TableCell>
-                          <TableCell className="text-slate-600">{payment.referenceNumber || "-"}</TableCell>
-                          <TableCell>
-                            <Button size="sm" variant="outline" className="border-slate-200 hover:border-blue-300">
-                              Párovať
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {unmatchedPayments.map((payment) => {
+                        const clientName = payment.client.companyName || payment.client.contactPerson;
+                        return (
+                          <TableRow key={payment.id} className="border-slate-200/60 hover:bg-amber-50/30">
+                            <TableCell>{format(new Date(payment.paidAt), "dd.MM.yyyy", { locale: sk })}</TableCell>
+                            <TableCell>
+                              <Link href={`/dashboard/clients/${payment.client.id}`} className="text-blue-600 hover:underline font-medium">
+                                {clientName}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              <Link href={`/dashboard/loans/${payment.loan.id}`} className="text-blue-600 hover:underline">
+                                {payment.loan.variableSymbol}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-bold text-amber-600">€{(payment.amount / 100).toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-slate-100">
+                                {payment.paymentMethod === "BANK_TRANSFER" && "Prevod"}
+                                {payment.paymentMethod === "CASH" && "Hotovosť"}
+                                {payment.paymentMethod === "CARD" && "Karta"}
+                                {payment.paymentMethod === "OTHER" && "Iné"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[200px]">
+                              {payment.notes ? (
+                                <span className="text-sm text-slate-600 truncate block" title={payment.notes}>
+                                  {payment.notes}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-sm">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Link href={`/dashboard/loans/${payment.loan.id}`}>
+                                <Button size="sm" variant="outline" className="border-slate-200 hover:border-blue-300">
+                                  Párovať
+                                </Button>
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}

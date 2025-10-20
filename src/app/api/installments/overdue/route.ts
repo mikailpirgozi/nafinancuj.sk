@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { installments, loans, clients } from "@/db/schema";
+import { installments, loans, clients, payments, reminders } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
@@ -23,36 +23,57 @@ export async function GET() {
         eq(loans.organizationId, organizationId)
       ));
 
-    // Transform data to match expected format
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = overdueInstallments.map((row: Record<string, any>) => {
-      const dueDate = new Date(row.installments.dueDate);
-      const today = new Date();
-      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Get payments and reminders for each installment
+    const result = await Promise.all(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      overdueInstallments.map(async (row: Record<string, any>) => {
+        const dueDate = new Date(row.installments.dueDate);
+        const today = new Date();
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      return {
-        id: row.installments.id,
-        dueDate: row.installments.dueDate,
-        totalAmount: row.installments.totalAmount,
-        paidAmount: row.installments.paidAmount,
-        status: row.installments.status,
-        loanId: row.installments.loanId,
-        daysOverdue: daysOverdue > 0 ? daysOverdue : 0,
-        remindersSent: 0, // TODO: Add reminders count from DB when implemented
-        loan: {
-          id: row.loans.id,
-          variableSymbol: row.loans.variableSymbol,
-          interestRateAnnual: row.loans.interestRateAnnual,
-        },
-        client: {
-          id: row.clients.id,
-          companyName: row.clients.companyName,
-          contactPerson: row.clients.contactPerson,
-          email: row.clients.email,
-          phone: row.clients.phone,
-        },
-      };
-    });
+        // Get payments for this installment
+        const installmentPayments = await db
+          .select()
+          .from(payments)
+          .where(eq(payments.installmentId, row.installments.id))
+          .orderBy(payments.paidAt);
+
+        // Get reminders for this installment
+        const installmentReminders = await db.query.reminders.findMany({
+          where: eq(reminders.installmentId, row.installments.id),
+          with: {
+            policy: true,
+          },
+          orderBy: (reminders, { asc }) => [asc(reminders.sentAt)],
+        });
+
+        return {
+          id: row.installments.id,
+          dueDate: row.installments.dueDate,
+          totalAmount: row.installments.totalAmount,
+          paidAmount: row.installments.paidAmount,
+          status: row.installments.status,
+          paidAt: row.installments.paidAt,
+          loanId: row.installments.loanId,
+          daysOverdue: daysOverdue > 0 ? daysOverdue : 0,
+          remindersSent: installmentReminders.length,
+          loan: {
+            id: row.loans.id,
+            variableSymbol: row.loans.variableSymbol,
+            interestRateAnnual: row.loans.interestRateAnnual,
+          },
+          client: {
+            id: row.clients.id,
+            companyName: row.clients.companyName,
+            contactPerson: row.clients.contactPerson,
+            email: row.clients.email,
+            phone: row.clients.phone,
+          },
+          payments: installmentPayments,
+          reminders: installmentReminders,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,

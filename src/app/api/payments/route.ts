@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { payments, installments, loans } from "@/db/schema";
+import { payments, installments, loans, clients } from "@/db/schema";
 import { requireOrganization } from "@/lib/auth";
 import { createPaymentSchema } from "@/lib/validators";
 import { eq, and, desc } from "drizzle-orm";
@@ -23,16 +23,48 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(payments.loanId, loanId));
     }
 
-    // Get payments with loan info
-    const result = await db
-      .select({
-        payment: payments,
-        loan: loans,
-      })
+    // Get payments with loan, client, and installment info
+    const paymentRecords = await db
+      .select()
       .from(payments)
       .innerJoin(loans, eq(payments.loanId, loans.id))
+      .innerJoin(clients, eq(loans.clientId, clients.id))
+      .leftJoin(installments, eq(payments.installmentId, installments.id))
       .where(and(...conditions))
       .orderBy(desc(payments.paidAt));
+
+    // Transform data to include all related info
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = paymentRecords.map((record: any) => ({
+      id: record.payments.id,
+      amount: record.payments.amount,
+      paymentMethod: record.payments.paymentMethod,
+      paidAt: record.payments.paidAt,
+      notes: record.payments.notes,
+      createdAt: record.payments.createdAt,
+      loanId: record.payments.loanId,
+      installmentId: record.payments.installmentId,
+      loan: {
+        id: record.loans.id,
+        variableSymbol: record.loans.variableSymbol,
+        amount: record.loans.amount,
+        status: record.loans.status,
+      },
+      client: {
+        id: record.clients.id,
+        companyName: record.clients.companyName,
+        contactPerson: record.clients.contactPerson,
+        email: record.clients.email,
+        phone: record.clients.phone,
+      },
+      installment: record.installments ? {
+        id: record.installments.id,
+        dueDate: record.installments.dueDate,
+        totalAmount: record.installments.totalAmount,
+        paidAmount: record.installments.paidAmount,
+        status: record.installments.status,
+      } : null,
+    }));
 
     return NextResponse.json({
       success: true,

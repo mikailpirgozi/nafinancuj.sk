@@ -563,26 +563,92 @@ export default function MainDashboard() {
         </CardContent>
       </Card>
 
-      {/* Overdue Alert */}
+      {/* Overdue Installments Widget */}
       {data && data.stats.overdueInstallments > 0 && (
         <Card className="border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-600">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
-              <AlertCircle className="h-5 w-5" />
-              Omeškané splátky vyžadujú pozornosť
-            </CardTitle>
-            <CardDescription className="text-red-600">
-              Máte {data.stats.overdueInstallments} omeškané splátky v celkovej hodnote €
-              {data.stats.overdueAmount.toLocaleString()}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-red-700">
+                  <AlertCircle className="h-5 w-5" />
+                  Omeškané splátky vyžadujú pozornosť
+                </CardTitle>
+                <CardDescription className="text-red-600 mt-2">
+                  Máte {data.stats.overdueInstallments} omeškané splátky v celkovej hodnote €
+                  {data.stats.overdueAmount.toLocaleString()}
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/overdue">
+                <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-500/30">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Zobraziť všetky
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
-            <Link href="/dashboard/overdue">
-              <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-500/30">
-                <FileText className="mr-2 h-4 w-4" />
-                Zobraziť omeškané splátky
-              </Button>
-            </Link>
+            {data.overdueInstallments && data.overdueInstallments.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-red-800 mb-3">Top 5 najkritickejších:</p>
+                {data.overdueInstallments.slice(0, 5).map((inst) => {
+                  const clientName = inst.loan.client?.companyName || inst.loan.client?.contactPerson || "Neznámy klient";
+                  const daysOverdue = Math.floor(
+                    (new Date().getTime() - new Date(inst.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  const remaining = inst.totalAmount - inst.paidAmount;
+
+                  return (
+                    <Link 
+                      key={inst.id} 
+                      href={`/dashboard/loans/${inst.loan.variableSymbol}`}
+                      className="block"
+                    >
+                      <div className="bg-white rounded-lg p-4 border-2 border-red-100 hover:border-red-300 transition-all hover:shadow-md cursor-pointer">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-gradient-to-br from-red-500 to-orange-600 text-white text-xs">
+                                {clientName.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-semibold text-slate-900">{clientName}</p>
+                              <p className="text-xs text-slate-500 font-mono">VS: {inst.loan.variableSymbol}</p>
+                            </div>
+                          </div>
+                          <Badge className={
+                            daysOverdue > 30
+                              ? "bg-red-600 text-white"
+                              : daysOverdue > 15
+                              ? "bg-orange-500 text-white"
+                              : "bg-amber-500 text-white"
+                          }>
+                            {daysOverdue} dní
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <div>
+                            <span className="text-slate-600">Zostáva: </span>
+                            <span className="font-bold text-red-700">€{(remaining / 100).toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-600">Splatnosť: </span>
+                            <span className="font-medium text-slate-900">
+                              {new Date(inst.dueDate).toLocaleDateString("sk-SK")}
+                            </span>
+                          </div>
+                        </div>
+                        {inst.loan.client?.phone && (
+                          <div className="mt-2 pt-2 border-t border-slate-100">
+                            <span className="text-xs text-slate-500">📞 {inst.loan.client.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

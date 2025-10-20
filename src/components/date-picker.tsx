@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -7,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 
@@ -19,26 +20,31 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ value, onChange, placeholder = "Vyberte dátum", disabled }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false);
   const date = value instanceof Date ? value : new Date(value);
   const isValid = !isNaN(date.getTime());
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="w-full justify-start text-left font-normal"
+          className="w-full justify-between text-left font-normal"
         >
-          <Calendar className="mr-2 h-4 w-4" />
           {isValid ? format(date, "d. MMMM yyyy", { locale: sk }) : placeholder}
+          <ChevronDownIcon className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent className="w-auto p-0 overflow-hidden" align="start">
         <CalendarComponent
           mode="single"
           selected={isValid ? date : undefined}
+          captionLayout="dropdown"
           onSelect={(d) => {
-            if (d) onChange(d.toISOString().split("T")[0]);
+            if (d) {
+              onChange(d.toISOString().split("T")[0]);
+              setOpen(false);
+            }
           }}
           disabled={disabled}
         />

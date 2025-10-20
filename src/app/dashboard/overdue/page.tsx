@@ -4,15 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertCircle,
   ArrowLeft,
@@ -33,13 +23,37 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { sk } from "date-fns/locale";
+import { OverdueInstallmentsTable } from "@/components/overdue-installments-table";
+
+interface Payment {
+  id: string;
+  amount: number;
+  paymentMethod: string;
+  paidAt: string;
+  notes: string | null;
+}
+
+interface ReminderPolicy {
+  id: string;
+  daysAfterDue: number;
+  reminderType: string;
+  feeType: string;
+  feeAmount: string;
+}
+
+interface Reminder {
+  id: string;
+  sentAt: string;
+  feeCharged: number;
+  policy: ReminderPolicy;
+}
 
 interface OverdueInstallment {
   id: string;
   dueDate: string;
   totalAmount: number;
   paidAmount: number;
+  paidAt: string | null;
   daysOverdue: number;
   remindersSent: number;
   loan: {
@@ -54,6 +68,8 @@ interface OverdueInstallment {
     email: string | null;
     phone: string | null;
   };
+  payments?: Payment[];
+  reminders?: Reminder[];
 }
 
 export default function OverduePage() {
@@ -301,84 +317,12 @@ export default function OverduePage() {
                 <p className="text-slate-600">Gratulujem! Žiadne splátky nie sú v omeskani.</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-200/60 hover:bg-transparent">
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedIds.size === filteredInstallments.length}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedIds(new Set(filteredInstallments.map((i) => i.id)));
-                          } else {
-                            setSelectedIds(new Set());
-                          }
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead>Klient</TableHead>
-                    <TableHead>VS</TableHead>
-                    <TableHead>Splatnosť</TableHead>
-                    <TableHead>Dní</TableHead>
-                    <TableHead>Suma</TableHead>
-                    <TableHead>Zaplatené</TableHead>
-                    <TableHead>Upomienky</TableHead>
-                    <TableHead>Akcie</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInstallments.map((inst) => (
-                    <TableRow key={inst.id} className="border-slate-200/60 hover:bg-slate-50/60">
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.has(inst.id)}
-                          onCheckedChange={(checked) => {
-                            const newIds = new Set(selectedIds);
-                            if (checked) {
-                              newIds.add(inst.id);
-                            } else {
-                              newIds.delete(inst.id);
-                            }
-                            setSelectedIds(newIds);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <Link href={`/dashboard/clients/${inst.client.id}`} className="text-blue-600 hover:underline">
-                          {inst.client.companyName || inst.client.contactPerson}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="font-mono">{inst.loan.variableSymbol}</TableCell>
-                      <TableCell>{format(new Date(inst.dueDate), "dd.MM.yyyy", { locale: sk })}</TableCell>
-                      <TableCell>
-                        <Badge className={
-                          inst.daysOverdue > 30
-                            ? "bg-red-100 text-red-800"
-                            : inst.daysOverdue > 15
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-amber-100 text-amber-800"
-                        }>
-                          {inst.daysOverdue} dní
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-bold">€{(inst.totalAmount / 100).toLocaleString()}</TableCell>
-                      <TableCell className="text-emerald-600">€{(inst.paidAmount / 100).toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-slate-100">{inst.remindersSent}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Link href={`/dashboard/loans/${inst.loan.id}`}>
-                            <Button size="sm" variant="outline" className="border-slate-200 hover:border-blue-300">
-                              Detail
-                            </Button>
-                          </Link>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <OverdueInstallmentsTable
+                installments={filteredInstallments}
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                onPaymentAdded={fetchOverdueInstallments}
+              />
             )}
           </CardContent>
         </Card>
