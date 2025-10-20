@@ -1,11 +1,32 @@
 import { Resend } from "resend";
 import twilio from "twilio";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+// Don't initialize at module scope - do it lazily when needed
+let resend: Resend | null = null;
+let twilioClient: ReturnType<typeof twilio> | null = null;
+
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
+
+function getTwilioClient() {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    return null;
+  }
+  if (!twilioClient) {
+    twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+  }
+  return twilioClient;
+}
 
 interface EmailParams {
   to: string;
@@ -22,13 +43,14 @@ interface SMSParams {
  * Send email via Resend
  */
 export async function sendEmail({ to, subject, html }: EmailParams) {
-  try {
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY not configured, skipping email");
-      return { success: false, error: "Email service not configured" };
-    }
+  const resendClient = getResendClient();
+  if (!resendClient) {
+    console.warn("RESEND_API_KEY not configured, skipping email");
+    return { success: false, error: "Email service not configured" };
+  }
 
-    const { data, error } = await resend.emails.send({
+  try {
+    const { data, error } = await resendClient.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
       to,
       subject,
@@ -52,12 +74,13 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
  * Send SMS via Twilio
  */
 export async function sendSMS({ to, message }: SMSParams) {
-  try {
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-      console.warn("Twilio not configured, skipping SMS");
-      return { success: false, error: "SMS service not configured" };
-    }
+  const twilioClient = getTwilioClient();
+  if (!twilioClient) {
+    console.warn("Twilio not configured, skipping SMS");
+    return { success: false, error: "SMS service not configured" };
+  }
 
+  try {
     const result = await twilioClient.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER,

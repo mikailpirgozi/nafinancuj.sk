@@ -1,0 +1,128 @@
+
+> nafinancuj-sk@0.1.0 dev /Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk
+> next dev --turbopack --port 3000
+
+   ▲ Next.js 15.5.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.19:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · staleTimes
+
+ ✓ Starting...
+ ✓ Compiled middleware in 119ms
+ ✓ Ready in 875ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 1588ms
+ GET /dashboard 404 in 1843ms
+[?25h
+
+> nafinancuj-sk@0.1.0 dev /Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk
+> next dev --turbopack --port 3000
+
+   ▲ Next.js 15.5.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.19:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · staleTimes
+
+ ✓ Starting...
+ ✓ Compiled middleware in 116ms
+ ✓ Ready in 770ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 1557ms
+ HEAD /dashboard 404 in 1798ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 512ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.dn8zcgvllpt'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.dn8zcgvllpt'
+}
+[Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.fhq5o307jew'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.fhq5o307jew'
+}
+[Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.ksffx8ay7o9'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.ksffx8ay7o9'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.ei4cw6p5268'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.ei4cw6p5268'
+}
+[Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.powknsv0ufb'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.powknsv0ufb'
+}
+[Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.1eddpmtlubx'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.1eddpmtlubx'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.mykayiqhzc'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.mykayiqhzc'
+}
+[Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.6wpev2g2gpf'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.6wpev2g2gpf'
+}
+[Error: ENOENT: no such file or directory, open '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.92cew4vxgsk'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk/.next/static/development/_buildManifest.js.tmp.92cew4vxgsk'
+}
+[?25h

@@ -1,0 +1,21 @@
+
+> nafinancuj-sk@0.1.0 dev /Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk
+> next dev --turbopack --port 3000
+
+   ▲ Next.js 15.5.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.19:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · staleTimes
+
+ ✓ Starting...
+ ✓ Compiled middleware in 124ms
+ ✓ Ready in 876ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 1645ms
+ GET /api/users 404 in 1897ms
+ HEAD /api/users 404 in 48ms
+ HEAD /dashboard 404 in 41ms
+ ✓ Compiled / in 272ms
+ HEAD / 200 in 433ms
