@@ -120,9 +120,14 @@ export default function LoanDetailPage() {
       if (!loanRes.ok) throw new Error("Chyba pri načítaní úveru");
 
       const loanData = await loanRes.json();
+      console.log("🔍 Loan API Response:", loanData);
+      
       // Handle nested response structure from API
       const loanInfo = loanData.data.loan || loanData.data;
       const loanInstallments = loanData.data.installments || [];
+      
+      console.log("🔍 Loan Info:", loanInfo);
+      console.log("🔍 Has client?", !!loanInfo?.client);
       
       setLoan(loanInfo);
       setInstallments(loanInstallments);

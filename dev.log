@@ -2,14 +2,55 @@
 > nafinancuj-sk@0.1.0 dev /Users/mikailpirgozi/Documents/Webove Aplikacie/Nafinancuj.sk
 > next dev --turbopack --port 3000
 
- ⨯ Failed to start server
-Error: listen EADDRINUSE: address already in use :::3000
-    at <unknown> (Error: listen EADDRINUSE: address already in use :::3000)
-    at new Promise (<anonymous>) {
-  code: 'EADDRINUSE',
-  errno: -48,
-  syscall: 'listen',
-  address: '::',
-  port: 3000
-}
-[?25h
+   ▲ Next.js 15.5.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.19:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · staleTimes
+
+ ✓ Starting...
+ ✓ Compiled middleware in 122ms
+ ✓ Ready in 801ms
+ ○ Compiling /dashboard/applications ...
+ ✓ Compiled /dashboard/applications in 1854ms
+ GET /dashboard/applications 200 in 2152ms
+ POST /dashboard/applications 200 in 98ms
+ ✓ Compiled /api/applications in 354ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 410ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+ GET /api/applications 200 in 1532ms
+ ✓ Compiled /dashboard/reports in 346ms
+ GET /dashboard/reports 200 in 400ms
+ ✓ Compiled /api/reports/overview in 136ms
+ GET /api/reports/overview?from=2025-09-20&to=2025-10-20 200 in 4473ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 844ms
+ GET /dashboard 200 in 892ms
+ ✓ Compiled /api/users/sync in 137ms
+ POST /api/users/sync 200 in 470ms
+ ✓ Compiled /api/loans in 170ms
+ POST /api/users/sync 200 in 1004ms
+ GET /api/clients 200 in 666ms
+ GET /api/clients 200 in 399ms
+ GET /api/loans 200 in 473ms
+ GET /api/loans 200 in 1063ms
+ ✓ Compiled /dashboard/loans in 311ms
+ GET /dashboard/loans 200 in 384ms
+ GET /api/loans 200 in 509ms
+ GET /api/loans 200 in 404ms
+ ✓ Compiled /_not-found/page in 191ms
+ GET /api/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 404 in 259ms
+ ✓ Compiled /dashboard/loans/[id] in 247ms
+ GET /dashboard/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 528ms
+ POST /dashboard/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 72ms
+ ✓ Compiled /api/collaterals in 211ms
+ GET /api/payments?loanId=2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 698ms
+ GET /api/collaterals?loanId=2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 777ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+ GET /api/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 2056ms
+ ✓ Compiled in 35ms
+ GET /api/payments?loanId=2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 546ms
+ GET /api/collaterals?loanId=2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 643ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+ GET /api/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 1272ms
