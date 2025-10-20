@@ -76,8 +76,17 @@ export default function SettingsPage() {
   const handleSaveOrganization = async () => {
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch(`/api/organizations/${user?.organizationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(organization),
+      });
+
+      if (!response.ok) throw new Error("Chyba pri uložení nastavení organizácie");
       toast.success("Nastavenia organizácie uložené");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(error instanceof Error ? error.message : "Chyba pri uložení");
     } finally {
       setIsSaving(false);
     }
@@ -86,8 +95,17 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+
+      if (!response.ok) throw new Error("Chyba pri aktualizácii profilu");
       toast.success("Profil úspešne aktualizovaný");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(error instanceof Error ? error.message : "Chyba pri uložení");
     } finally {
       setIsSaving(false);
     }
@@ -96,8 +114,17 @@ export default function SettingsPage() {
   const handleSaveNotifications = async () => {
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch("/api/users/me/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(notifications),
+      });
+
+      if (!response.ok) throw new Error("Chyba pri uložení notifikácií");
       toast.success("Notifikácie uložené");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(error instanceof Error ? error.message : "Chyba pri uložení");
     } finally {
       setIsSaving(false);
     }
@@ -106,8 +133,17 @@ export default function SettingsPage() {
   const handleSaveApiKeys = async () => {
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKeys }),
+      });
+
+      if (!response.ok) throw new Error("Chyba pri uložení API kľúčov");
       toast.success("API kľúče uložené");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(error instanceof Error ? error.message : "Chyba pri uložení");
     } finally {
       setIsSaving(false);
     }

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Calendar, CheckCircle, Clock, XCircle, AlertTriangle, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import React from "react";
 
 interface Payment {
   id: string;
@@ -55,8 +56,8 @@ interface Installment {
 }
 
 interface InstallmentScheduleProps {
-  installments: Installment[];
   loanId: string;
+  installments: Installment[];
   onPaymentAdded?: () => void;
 }
 
@@ -87,7 +88,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: InstallmentScheduleProps) {
+const InstallmentScheduleContent = ({ installments }: { installments: Installment[] }) => {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -456,5 +457,18 @@ export function InstallmentSchedule({ installments, loanId, onPaymentAdded }: In
       </Dialog>
     </Card>
   );
-}
+};
+
+export const InstallmentSchedule = React.memo(
+  ({ loanId, installments, onPaymentAdded }: InstallmentScheduleProps) => {
+    return <InstallmentScheduleContent installments={installments} loanId={loanId} onPaymentAdded={onPaymentAdded} />;
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison: re-render only if installments actually changed
+    return (
+      prevProps.loanId === nextProps.loanId &&
+      JSON.stringify(prevProps.installments) === JSON.stringify(nextProps.installments)
+    );
+  }
+);
 

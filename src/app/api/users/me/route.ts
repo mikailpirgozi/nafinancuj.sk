@@ -1,15 +1,15 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { contractTemplates } from "@/db/schema/contract-templates";
 import { users } from "@/db/schema/users";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const templateCreateSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().optional(),
-  content: z.string().min(10),
+const userUpdateSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  phone: z.string().optional(),
+  language: z.enum(["sk", "en", "cs"]).optional(),
+  timezone: z.string().optional(),
 });
 
 export async function GET(request: Request) {
@@ -30,23 +30,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user.organizationId) {
-      return NextResponse.json(
-        { error: "User is not associated with an organization" },
-        { status: 403 }
-      );
-    }
-
-    // Fetch all templates for organization
-    const templates = await db
-      .select()
-      .from(contractTemplates)
-      .where(eq(contractTemplates.organizationId, user.organizationId))
-      .orderBy(contractTemplates.createdAt);
-
-    return NextResponse.json({ data: templates });
+    return NextResponse.json({ data: user });
   } catch (error) {
-    console.error("Error fetching templates:", error);
+    console.error("Error fetching user profile:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -54,7 +40,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function PATCH(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -72,15 +58,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user.organizationId) {
-      return NextResponse.json(
-        { error: "User is not associated with an organization" },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
-    const validation = templateCreateSchema.safeParse(body);
+    const validation = userUpdateSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -89,28 +68,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, description, content } = validation.data;
+    const updateData = validation.data;
 
-    // Create template
-    const newTemplate = await db
-      .insert(contractTemplates)
-      .values({
-        organizationId: user.organizationId,
-        name,
-        description: description || null,
-        content,
-        isDefault: false,
+    // Update user
+    const updated = await db
+      .update(users)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
       })
+      .where(eq(users.id, userId))
       .returning()
       .then((rows) => rows[0]);
 
-    return NextResponse.json({ data: newTemplate }, { status: 201 });
+    return NextResponse.json({ data: updated });
   } catch (error) {
-    console.error("Error creating template:", error);
+    console.error("Error updating user profile:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
-

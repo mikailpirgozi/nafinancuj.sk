@@ -1,155 +1,134 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { contractTemplates, loans, documents, users } from "@/db/schema";
-import { type Loan, type User } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { contractGenerateSchema } from "@/lib/validators/contract-template";
-import { generateLoanAgreementPDF } from "@/lib/services/pdf-generator";
-import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import { loans } from "@/db/schema/loans";
+import { users } from "@/db/schema/users";
+import { contractTemplates } from "@/db/schema/contract-templates";
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { generatePDF } from "@/lib/services/pdf-generator";
 
-export async function POST(req: NextRequest) {
+const generateContractSchema = z.object({
+  loanId: z.string().min(1),
+  templateId: z.string().optional(),
+});
+
+export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const validation = contractGenerateSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: "Validation failed", details: validation.error.flatten() },
-        { status: 400 }
-      );
-    }
-
-    // Get user's organization
     const user = await db
       .select()
       .from(users)
       .where(eq(users.id, userId))
       .limit(1)
-      .execute();
+      .then((rows) => rows[0]);
 
-    if (!user || user.length === 0) {
+    if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const userData = user[0] as Pick<User, 'organizationId'>;
-    const organizationId = userData.organizationId;
-
-    if (!organizationId) {
-      return NextResponse.json({ error: "User has no organization" }, { status: 400 });
-    }
-
-    // Fetch template
-    const template = await db
-      .select()
-      .from(contractTemplates)
-      .where(
-        and(
-          eq(contractTemplates.id, validation.data.templateId),
-          eq(contractTemplates.organizationId, organizationId)
-        )
-      )
-      .limit(1)
-      .execute();
-
-    if (!template || template.length === 0) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    }
-
-    // Fetch loan with related data
-    const loan = await db
-      .select()
-      .from(loans)
-      .where(eq(loans.id, validation.data.loanId))
-      .limit(1)
-      .execute();
-
-    if (!loan || loan.length === 0) {
-      return NextResponse.json({ error: "Loan not found" }, { status: 404 });
-    }
-
-    const loanData = loan[0] as Loan;
-
-    // Prepare variables for PDF generation
-    const pdfVariables = {
-      client_name: validation.data.variables?.client_name || "Dlžník",
-      client_ico: validation.data.variables?.client_ico || "",
-      loan_amount: validation.data.variables?.loan_amount || String(loanData.amount / 100),
-      interest_rate: validation.data.variables?.interest_rate || loanData.interestRateAnnual,
-      duration_months: validation.data.variables?.duration_months || loanData.durationMonths,
-      start_date: validation.data.variables?.start_date || loanData.startDate,
-      end_date: validation.data.variables?.end_date || loanData.endDate,
-      variable_symbol: validation.data.variables?.variable_symbol || loanData.variableSymbol,
-    };
-
-    // Generate PDF
-    const pdfBlob = await generateLoanAgreementPDF({
-      templateContent: template[0].templateContent,
-      variables: pdfVariables,
-      loanData: {
-        variableSymbol: loanData.variableSymbol,
-      },
-    });
-
-    // Upload to Supabase Storage
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-    );
-
-    const fileName = `contracts/${loanData.id}/${Date.now()}-contract.pdf`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(fileName, pdfBlob, {
-        contentType: "application/pdf",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("Supabase upload error:", uploadError);
+    if (!user.organizationId) {
       return NextResponse.json(
-        { error: "Failed to upload PDF" },
-        { status: 500 }
+        { error: "User is not associated with an organization" },
+        { status: 403 }
       );
     }
 
-    // Get public URL
-    const { data: publicData } = supabase.storage
-      .from("documents")
-      .getPublicUrl(fileName);
+    const body = await request.json();
+    const validation = generateContractSchema.safeParse(body);
 
-    // Create document record in database
-    const documentResult = await db
-      .insert(documents)
-      .values({
-        organizationId,
-        entityType: "LOAN" as const,
-        entityId: validation.data.loanId,
-        category: "CONTRACT" as const,
-        fileName: `Contract - ${template[0].name}`,
-        fileUrl: publicData.publicUrl,
-        uploadedBy: userId,
-      })
-      .returning();
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation error", details: validation.error.flatten() },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        documentId: documentResult[0]?.id,
-        downloadUrl: publicData.publicUrl,
-        fileName,
+    const { loanId, templateId } = validation.data;
+
+    // Get loan
+    const loan = await db
+      .select()
+      .from(loans)
+      .where(eq(loans.id, loanId))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!loan) {
+      return NextResponse.json({ error: "Loan not found" }, { status: 404 });
+    }
+
+    // Get template (use provided or default)
+    let template;
+    if (templateId) {
+      template = await db
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.id, templateId))
+        .limit(1)
+        .then((rows) => rows[0]);
+    } else {
+      // Get default template for organization
+      template = await db
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.isDefault, true))
+        .limit(1)
+        .then((rows) => rows[0]);
+    }
+
+    if (!template) {
+      return NextResponse.json(
+        { error: "No contract template found" },
+        { status: 404 }
+      );
+    }
+
+    // Prepare template variables
+    const contractData = {
+      client_name: "Klient",
+      loan_amount: (loan.amount / 100).toLocaleString("sk-SK"),
+      loan_currency: "EUR",
+      interest_rate: loan.interestRateAnnual,
+      duration_months: loan.durationMonths,
+      start_date: loan.startDate,
+      end_date: loan.endDate,
+      variable_symbol: loan.variableSymbol,
+      organization_name: user.organizationId,
+    };
+
+    // Replace variables in template
+    let htmlContent = template.content;
+    Object.entries(contractData).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, "g");
+      htmlContent = htmlContent.replace(regex, String(value));
+    });
+
+    // Generate PDF
+    const pdfBuffer = await generatePDF(htmlContent);
+
+    // Create filename
+    const filename = `contract-${loan.variableSymbol}-${Date.now()}.pdf`;
+
+    // Return PDF for download
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store, must-revalidate",
       },
     });
   } catch (error) {
     console.error("Error generating contract:", error);
     return NextResponse.json(
-      { error: "Failed to generate contract" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

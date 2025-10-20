@@ -116,3 +116,138 @@
  GET /api/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 1472ms
  ✓ Compiled in 30ms
  ✓ Compiled in 27ms
+ GET /dashboard/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 82ms
+ POST /dashboard/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 79ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 271ms
+ GET /api/collaterals?loanId=2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 561ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+ GET /api/payments?loanId=2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 1052ms
+ GET /api/loans/2438f27d-0ba4-4f5f-af74-4c8af266fb2f 200 in 1594ms
+ GET /dashboard/loans 200 in 36ms
+ GET /api/loans 200 in 410ms
+ GET /api/loans 200 in 398ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 0ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 0ms
+ ✓ Compiled middleware in 0ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled middleware in 0ms
+ ✓ Compiled / in 231ms
+ GET / 307 in 451ms
+ GET /dashboard 200 in 180ms
+ POST /dashboard 200 in 42ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+ POST /api/users/sync 200 in 1988ms
+ GET /api/loans 200 in 567ms
+ GET /api/clients 200 in 1093ms
+ GET /dashboard/clients 200 in 75ms
+ GET /api/clients 200 in 508ms
+ GET /api/clients 200 in 529ms
+ GET /dashboard/clients/58ee1454-ead4-4ef0-88cc-2c428f421c6b 200 in 131ms
+ POST /dashboard/clients/58ee1454-ead4-4ef0-88cc-2c428f421c6b 200 in 70ms
+ ✓ Compiled /api/clients/[id]/stats in 120ms
+ GET /api/applications?clientId=58ee1454-ead4-4ef0-88cc-2c428f421c6b 200 in 528ms
+ GET /api/loans?clientId=58ee1454-ead4-4ef0-88cc-2c428f421c6b 200 in 582ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+ GET /api/clients/58ee1454-ead4-4ef0-88cc-2c428f421c6b 200 in 1153ms
+ GET /api/clients/58ee1454-ead4-4ef0-88cc-2c428f421c6b/notes 200 in 1156ms
+ GET /api/clients/58ee1454-ead4-4ef0-88cc-2c428f421c6b/stats 500 in 1339ms
+ GET /dashboard/loans/3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 76ms
+ GET /api/payments?loanId=3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 491ms
+ GET /api/collaterals?loanId=3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 569ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+ GET /api/loans/3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 2161ms
+ GET /api/payments?loanId=3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 1837ms
+ GET /api/collaterals?loanId=3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 1847ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+ GET /api/loans/3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 1786ms
+ ✓ Compiled middleware in 1ms
+ GET /dashboard/loans/3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 45ms
+ ✓ Compiled middleware in 1ms
+ GET /dashboard/loans/3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 69ms
+ POST /api/payments 201 in 813ms
+ GET /api/payments?loanId=3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 424ms
+ GET /api/collaterals?loanId=3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 533ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+ GET /api/loans/3b28ee21-5859-4aa8-bad1-f8686f5ea52a 200 in 1542ms
+ GET /dashboard/loans 200 in 74ms
+ GET /api/loans 200 in 457ms
+ GET /api/loans 200 in 455ms
+ GET /dashboard/applications 200 in 67ms
+ GET /api/applications 200 in 446ms
+ GET /api/applications 200 in 448ms
+ ✓ Compiled /dashboard/reports in 207ms
+ GET /dashboard/reports 200 in 254ms
+ ✓ Compiled /api/reports/overview in 70ms
+ GET /api/reports/overview?from=2025-09-20&to=2025-10-20 500 in 566ms
+ ✓ Compiled in 32ms
+ GET /dashboard 200 in 40ms
+ POST /api/users/sync 200 in 313ms
+ POST /api/users/sync 200 in 320ms
+ GET /api/clients 200 in 477ms
+ GET /api/loans 200 in 499ms
+ GET /api/loans 200 in 508ms
+ GET /api/clients 200 in 504ms
+ ✓ Compiled /dashboard/reminders in 208ms
+ GET /dashboard/reminders 200 in 257ms
+ ✓ Compiled /api/reminders/policies in 82ms
+ GET /api/reminders/policies 200 in 490ms
+ GET /api/reminders/policies 200 in 399ms
+ ✓ Compiled in 41ms
+ ○ Compiling /api/reminders/generate ...
+ ✓ Compiled /api/reminders/generate in 581ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 551ms
+ POST /api/reminders/generate 500 in 1294ms
+ POST /api/reminders/generate 500 in 26ms
+ POST /api/users/sync 200 in 333ms
+ POST /api/users/sync 200 in 336ms
+ GET /api/clients 200 in 483ms
+ GET /api/clients 200 in 488ms
+ GET /api/loans 200 in 493ms
+ GET /api/loans 200 in 504ms
+ GET /dashboard 200 in 90ms
+ POST /dashboard 200 in 51ms
+ GET /favicon.ico?favicon.0b3bf435.ico 500 in 33ms
+ POST /api/users/sync 200 in 352ms
+ GET /api/clients 200 in 472ms
+ GET /api/loans 200 in 480ms
+ ✓ Compiled in 36ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled in 53ms
+ GET /dashboard 200 in 114ms
+ GET /dashboard 200 in 43ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled in 168ms
+ GET /dashboard 200 in 93ms
+ GET /dashboard 200 in 39ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled in 60ms
+ ✓ Compiled in 131ms
+ GET /dashboard 200 in 96ms
+ GET /dashboard 200 in 55ms
+ ✓ Compiled in 36ms
+ ✓ Compiled middleware in 1ms
+ GET /dashboard 200 in 51ms
+ GET /dashboard 200 in 276ms
+ POST /dashboard 200 in 45ms
+ GET /favicon.ico?favicon.0b3bf435.ico 500 in 22ms
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+ POST /api/users/sync 200 in 884ms
+ GET /api/loans 200 in 562ms
+ GET /api/clients 200 in 1019ms
+ GET /dashboard 200 in 96ms
+ POST /dashboard 200 in 39ms
+ GET /favicon.ico?favicon.0b3bf435.ico 500 in 22ms
+ POST /api/users/sync 200 in 331ms
+ GET /api/clients 200 in 557ms
+ GET /api/loans 200 in 585ms
+[?25h

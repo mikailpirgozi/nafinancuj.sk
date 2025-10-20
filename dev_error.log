@@ -1,0 +1,114 @@
+Error: Route "/api/clients/[id]/stats" used `params.id`. `params` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at GET (src/app/api/clients/[id]/stats/route.ts:38:29)
+  36 |     }
+  37 |
+> 38 |     const clientId = params.id;
+     |                             ^
+  39 |
+  40 |     // Verify client belongs to organization
+  41 |     const client = await db
+Error: Route "/api/clients/[id]/notes" used `params.id`. `params` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at GET (src/app/api/clients/[id]/notes/route.ts:47:29)
+  45 |     }
+  46 |
+> 47 |     const clientId = params.id;
+     |                             ^
+  48 |
+  49 |     // Verify client exists
+  50 |     const client = await db
+Error fetching client stats: TypeError: col.loanId.inArray is not a function
+    at <unknown> (src/app/api/clients/[id]/stats/route.ts:66:40)
+    at GET (src/app/api/clients/[id]/stats/route.ts:66:14)
+  64 |             .select()
+  65 |             .from(installments)
+> 66 |             .where((col) => col.loanId.inArray(loanIds))
+     |                                        ^
+  67 |         : [];
+  68 |
+  69 |     const today = new Date();
+Error fetching report overview: TypeError: col.loanId.inArray is not a function
+    at <unknown> (src/app/api/reports/overview/route.ts:54:40)
+    at GET (src/app/api/reports/overview/route.ts:54:14)
+  52 |             .select()
+  53 |             .from(installments)
+> 54 |             .where((col) => col.loanId.inArray(loanIds))
+     |                                        ^
+  55 |         : [];
+  56 |
+  57 |     // Get all applications for organization
+ ⨯ ./node_modules/.pnpm/resend@6.2.0/node_modules/resend/dist/index.mjs:175:5
+Module not found: Can't resolve '@react-email/render'
+[0m [90m 173 |[39m [36mfunction[39m render(node) {
+ [90m 174 |[39m   [36mreturn[39m [36mnew[39m [33mPromise[39m((resolve[33m,[39m reject) [33m=>[39m {
+[31m[1m>[22m[39m[90m 175 |[39m     [36mimport[39m([32m"@react-email/render"[39m)[33m.[39mthen(({ render[33m:[39m render2 }) [33m=>[39m {
+ [90m     |[39m     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 176 |[39m       resolve(render2(node))[33m;[39m
+ [90m 177 |[39m     })[33m.[39m[36mcatch[39m(() [33m=>[39m {
+ [90m 178 |[39m       reject([0m
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/.pnpm/resend@6.2.0/node_modules/resend/dist/index.mjs
+    ./src/lib/services/notification-service.ts
+    ./src/app/api/reminders/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+ ⨯ [TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+Error [ModuleBuildError]: ./node_modules/.pnpm/resend@6.2.0/node_modules/resend/dist/index.mjs:175:5
+Module not found: Can't resolve '@react-email/render'
+[0m [90m 173 |[39m [36mfunction[39m render(node) {
+ [90m 174 |[39m   [36mreturn[39m [36mnew[39m [33mPromise[39m((resolve[33m,[39m reject) [33m=>[39m {
+[31m[1m>[22m[39m[90m 175 |[39m     [36mimport[39m([32m"@react-email/render"[39m)[33m.[39mthen(({ render[33m:[39m render2 }) [33m=>[39m {
+ [90m     |[39m     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 176 |[39m       resolve(render2(node))[33m;[39m
+ [90m 177 |[39m     })[33m.[39m[36mcatch[39m(() [33m=>[39m {
+ [90m 178 |[39m       reject([0m
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/.pnpm/resend@6.2.0/node_modules/resend/dist/index.mjs
+    ./src/lib/services/notification-service.ts
+    ./src/app/api/reminders/generate/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+ ⨯ unhandledRejection: [TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+ ⨯ unhandledRejection:  [TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+ ⨯ [TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+[TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+ ⨯ unhandledRejection: [TypeError: Cannot read properties of null (reading 'useInsertionEffect')]
+ ⨯ unhandledRejection:  [TypeError: Cannot read properties of null (reading 'useInsertionEffect')]

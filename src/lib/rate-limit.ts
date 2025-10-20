@@ -15,60 +15,82 @@ interface RateLimitOptions {
   message?: string;
 }
 
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
+}
+
+// In-memory store for rate limiting (use Redis in production)
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+const RATE_LIMITS = {
+  finstat: { requests: 10, windowMs: 60 * 1000 }, // 10 req/min
+  generateReminders: { requests: 5, windowMs: 60 * 60 * 1000 }, // 5 req/hour
+  generateContract: { requests: 20, windowMs: 60 * 60 * 1000 }, // 20 req/hour
+  uploadDocument: { requests: 50, windowMs: 60 * 60 * 1000 }, // 50 req/hour
+  default: { requests: 100, windowMs: 60 * 60 * 1000 }, // 100 req/hour
+};
+
+function getKey(userId: string, endpoint: string): string {
+  return `${userId}:${endpoint}`;
+}
+
+function getCurrentEntry(key: string): RateLimitEntry {
+  const entry = rateLimitStore.get(key);
+  const now = Date.now();
+
+  if (!entry || now > entry.resetTime) {
+    return { count: 0, resetTime: now + 60000 };
+  }
+
+  return entry;
+}
+
 /**
  * Simple in-memory rate limiter
  * For production, use Redis or similar distributed cache
  */
-export function rateLimit(options: RateLimitOptions) {
-  const { windowMs, maxRequests, message = "Too many requests" } = options;
+export function rateLimit(
+  userId: string,
+  endpoint: keyof typeof RATE_LIMITS = "default"
+): {
+  allowed: boolean;
+  remaining: number;
+  resetTime: number;
+  limit: number;
+} {
+  const key = getKey(userId, endpoint);
+  const limits = RATE_LIMITS[endpoint];
+  let entry = getCurrentEntry(key);
 
-  return async (req: NextRequest): Promise<NextResponse | null> => {
-    // Get identifier (IP address or user ID)
-    const identifier =
-      req.headers.get("x-forwarded-for") ||
-      req.headers.get("x-real-ip") ||
-      "unknown";
+  entry.count += 1;
+  const now = Date.now();
 
-    const now = Date.now();
-    const key = `${identifier}:${req.nextUrl.pathname}`;
+  // Reset if window has passed
+  if (now > entry.resetTime) {
+    entry = { count: 1, resetTime: now + limits.windowMs };
+  }
 
-    // Clean up expired entries
-    if (store[key] && store[key].resetTime < now) {
-      delete store[key];
-    }
+  rateLimitStore.set(key, entry);
 
-    // Initialize or increment counter
-    if (!store[key]) {
-      store[key] = {
-        count: 1,
-        resetTime: now + windowMs,
-      };
-    } else {
-      store[key].count++;
-    }
+  const allowed = entry.count <= limits.requests;
+  const remaining = Math.max(0, limits.requests - entry.count);
 
-    // Check if limit exceeded
-    if (store[key].count > maxRequests) {
-      const resetIn = Math.ceil((store[key].resetTime - now) / 1000);
+  return {
+    allowed,
+    remaining,
+    resetTime: entry.resetTime,
+    limit: limits.requests,
+  };
+}
 
-      return NextResponse.json(
-        {
-          error: message,
-          retryAfter: resetIn,
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": resetIn.toString(),
-            "X-RateLimit-Limit": maxRequests.toString(),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": new Date(store[key].resetTime).toISOString(),
-          },
-        }
-      );
-    }
-
-    return null; // Continue to next middleware/handler
+export function getRateLimitHeaders(
+  result: ReturnType<typeof rateLimit>
+): Record<string, string> {
+  return {
+    "X-RateLimit-Limit": result.limit.toString(),
+    "X-RateLimit-Remaining": result.remaining.toString(),
+    "X-RateLimit-Reset": Math.ceil(result.resetTime / 1000).toString(),
   };
 }
 
@@ -133,20 +155,14 @@ export const rateLimiters = {
   }),
 };
 
-/**
- * Cleanup old entries periodically
- */
-if (typeof setInterval !== "undefined") {
-  setInterval(
-    () => {
-      const now = Date.now();
-      Object.keys(store).forEach((key) => {
-        if (store[key].resetTime < now) {
-          delete store[key];
-        }
-      });
-    },
-    60 * 1000
-  ); // Clean up every minute
-}
+// Clean up old entries periodically (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime + 60000) {
+      // Remove entries 1 minute after reset
+      rateLimitStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
 

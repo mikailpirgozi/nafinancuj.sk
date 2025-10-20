@@ -1,15 +1,16 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { contractTemplates } from "@/db/schema/contract-templates";
 import { users } from "@/db/schema/users";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const templateCreateSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().optional(),
-  content: z.string().min(10),
+const notificationUpdateSchema = z.object({
+  emailNewApplications: z.boolean().optional(),
+  emailApprovedLoans: z.boolean().optional(),
+  emailOverduePayments: z.boolean().optional(),
+  emailReceivedPayments: z.boolean().optional(),
+  smsCriticalReminders: z.boolean().optional(),
 });
 
 export async function GET(request: Request) {
@@ -30,23 +31,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user.organizationId) {
-      return NextResponse.json(
-        { error: "User is not associated with an organization" },
-        { status: 403 }
-      );
-    }
-
-    // Fetch all templates for organization
-    const templates = await db
-      .select()
-      .from(contractTemplates)
-      .where(eq(contractTemplates.organizationId, user.organizationId))
-      .orderBy(contractTemplates.createdAt);
-
-    return NextResponse.json({ data: templates });
+    return NextResponse.json({
+      data: {
+        emailNewApplications: user.emailNewApplications || true,
+        emailApprovedLoans: user.emailApprovedLoans || true,
+        emailOverduePayments: user.emailOverduePayments || true,
+        emailReceivedPayments: user.emailReceivedPayments || true,
+        smsCriticalReminders: user.smsCriticalReminders || false,
+      },
+    });
   } catch (error) {
-    console.error("Error fetching templates:", error);
+    console.error("Error fetching notification preferences:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -54,7 +49,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function PATCH(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -72,15 +67,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user.organizationId) {
-      return NextResponse.json(
-        { error: "User is not associated with an organization" },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
-    const validation = templateCreateSchema.safeParse(body);
+    const validation = notificationUpdateSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -89,28 +77,33 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, description, content } = validation.data;
+    const updateData = validation.data;
 
-    // Create template
-    const newTemplate = await db
-      .insert(contractTemplates)
-      .values({
-        organizationId: user.organizationId,
-        name,
-        description: description || null,
-        content,
-        isDefault: false,
+    // Update user notifications
+    const updated = await db
+      .update(users)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
       })
+      .where(eq(users.id, userId))
       .returning()
       .then((rows) => rows[0]);
 
-    return NextResponse.json({ data: newTemplate }, { status: 201 });
+    return NextResponse.json({
+      data: {
+        emailNewApplications: updated.emailNewApplications || true,
+        emailApprovedLoans: updated.emailApprovedLoans || true,
+        emailOverduePayments: updated.emailOverduePayments || true,
+        emailReceivedPayments: updated.emailReceivedPayments || true,
+        smsCriticalReminders: updated.smsCriticalReminders || false,
+      },
+    });
   } catch (error) {
-    console.error("Error creating template:", error);
+    console.error("Error updating notification preferences:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
-

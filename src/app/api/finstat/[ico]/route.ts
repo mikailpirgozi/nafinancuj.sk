@@ -1,43 +1,65 @@
-import { getCompanyByICO } from "@/lib/services/finstat-api";
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/db";
+import { users } from "@/db/schema/users";
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+import { fetchFinstatData } from "@/lib/services/finstat-api";
 
-export async function GET(_req: NextRequest, context: { params: Promise<{ ico: string }> }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { ico: string } }
+) {
   try {
-    const { ico } = await context.params;
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Validate ICO format
-    if (!ico || !/^\d{8}$/.test(ico)) {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (!user.organizationId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid ICO format. Must be 8 digits.",
-        },
+        { error: "User is not associated with an organization" },
+        { status: 403 }
+      );
+    }
+
+    const ico = params.ico.trim();
+
+    // Validate ICO format (Slovak ICO is 8 digits)
+    if (!/^\d{8}$/.test(ico)) {
+      return NextResponse.json(
+        { error: "Invalid ICO format. Must be 8 digits." },
         { status: 400 }
       );
     }
 
-    const companyData = await getCompanyByICO(ico);
+    // Fetch from Finstat API
+    const finstatData = await fetchFinstatData(ico);
 
-    if (!companyData) {
+    if (!finstatData) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Company not found in Finstat registry",
-        },
+        { error: "Company not found in Finstat" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: companyData,
-    });
+    return NextResponse.json({ data: finstatData });
   } catch (error) {
-    console.error("Error in /api/finstat/[ico]:", error);
+    console.error("Error fetching from Finstat:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Failed to fetch company data",
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );

@@ -1,13 +1,16 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
+import { clients } from "@/db/schema/clients";
 import { loans } from "@/db/schema/loans";
 import { installments } from "@/db/schema/installments";
-import { applications } from "@/db/schema/applications";
 import { users } from "@/db/schema/users";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -32,20 +35,29 @@ export async function GET(request: Request) {
       );
     }
 
-    // Parse query parameters for date range
-    const url = new URL(request.url);
-    const from = url.searchParams.get("from");
-    const to = url.searchParams.get("to");
+    const clientId = params.id;
 
-    // Get all loans for organization
-    const orgLoans = await db
+    // Verify client belongs to organization
+    const client = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.id, clientId))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Get all loans for client
+    const clientLoans = await db
       .select()
       .from(loans)
-      .where(eq(loans.organizationId, user.organizationId));
+      .where(eq(loans.clientId, clientId));
 
-    const loanIds = orgLoans.map((loan) => loan.id);
+    const loanIds = clientLoans.map((loan) => loan.id);
 
-    // Get all installments for organization loans
+    // Get installments for all client loans
     const allInstallments =
       loanIds.length > 0
         ? await db
@@ -54,19 +66,20 @@ export async function GET(request: Request) {
             .where((col) => col.loanId.inArray(loanIds))
         : [];
 
-    // Get all applications for organization
-    const orgApplications = await db
-      .select()
-      .from(applications)
-      .where(eq(applications.organizationId, user.organizationId));
-
-    // Calculate stats
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayString = today.toISOString().split("T")[0];
 
-    const totalLoans = orgLoans.length;
-    const totalVolume = orgLoans.reduce((sum, loan) => sum + loan.amount, 0);
+    // Calculate stats
+    const totalLoans = clientLoans.length;
+    const activeLoans = clientLoans.filter(
+      (loan) => loan.status === "ACTIVE"
+    ).length;
+    const completedLoans = clientLoans.filter(
+      (loan) => loan.status === "COMPLETED"
+    ).length;
+
+    const totalVolume = clientLoans.reduce((sum, loan) => sum + loan.amount, 0);
     const totalPaid = allInstallments.reduce(
       (sum, inst) => sum + inst.paidAmount,
       0
@@ -75,30 +88,24 @@ export async function GET(request: Request) {
     const overdueInstallments = allInstallments.filter(
       (inst) => inst.dueDate < todayString && inst.status !== "PAID"
     );
-    const overdueMoney = overdueInstallments.reduce(
+    const overdueAmount = overdueInstallments.reduce(
       (sum, inst) => sum + (inst.totalAmount - inst.paidAmount),
       0
     );
 
-    const newApplications = orgApplications.filter(
-      (app) => app.status === "NEW"
-    ).length;
-    const approvedApplications = orgApplications.filter(
-      (app) => app.status === "APPROVED"
-    ).length;
-
     return NextResponse.json({
       data: {
         totalLoans,
-        totalVolume: totalVolume / 100, // Convert from cents
-        totalPaid: totalPaid / 100,
-        overdueMoney: overdueMoney / 100,
-        newApplications,
-        approvedApplications,
+        activeLoans,
+        completedLoans,
+        totalVolume,
+        totalPaid,
+        overdueInstallments: overdueInstallments.length,
+        overdueAmount,
       },
     });
   } catch (error) {
-    console.error("Error fetching report overview:", error);
+    console.error("Error fetching client stats:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
